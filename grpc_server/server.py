@@ -5,7 +5,7 @@ from concurrent import futures
 import grpc
 
 from app.config.settings import settings
-from grpc_server.generated.proto.sso import user_pb2_grpc, auth_pb2_grpc
+from proto.sso import user_pb2_grpc, auth_pb2_grpc
 from grpc_server.servicer import UserServicer, AuthServicer
 
 logging.basicConfig(

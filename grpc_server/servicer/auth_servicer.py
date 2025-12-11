@@ -6,7 +6,7 @@ import grpc
 from google.protobuf.timestamp_pb2 import Timestamp
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from grpc_server.generated.proto.sso import auth_pb2, auth_pb2_grpc
+from proto.sso import auth_pb2, auth_pb2_grpc
 from app.config.database import async_session_maker
 from app.config.settings import settings
 from app.modules.users.repositories import UserQueries, UserCommands

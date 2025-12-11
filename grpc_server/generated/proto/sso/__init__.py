@@ -1,1 +1,0 @@
-# gRPC SSO proto package

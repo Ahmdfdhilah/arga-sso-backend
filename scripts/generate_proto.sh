@@ -10,18 +10,16 @@ if ! command -v python3 &> /dev/null; then
 fi
 
 PROTO_PATH="proto"
-OUTPUT_PATH="grpc_server/generated"
 
-mkdir -p $OUTPUT_PATH
-
+# Generate directly to proto/sso
 echo "Generating Python gRPC code..."
 python3 -m grpc_tools.protoc \
     -I. \
-    --python_out=$OUTPUT_PATH \
-    --grpc_python_out=$OUTPUT_PATH \
-    --pyi_out=$OUTPUT_PATH \
-    ${PROTO_PATH}/sso/user.proto
-
-touch $OUTPUT_PATH/__init__.py
+    --python_out=. \
+    --grpc_python_out=. \
+    --pyi_out=. \
+    ${PROTO_PATH}/sso/user.proto \
+    ${PROTO_PATH}/sso/auth.proto
 
 echo "Proto generation complete!"
+echo "Generated files are in proto/sso/"
