@@ -12,6 +12,8 @@ class ApplicationListItemResponse(BaseModel):
     id: UUID = Field(..., description="Application UUID")
     name: str = Field(..., description="Application name")
     code: str = Field(..., description="Application code")
+    description: Optional[str] = Field(None, description="Application description")
+    base_url: str = Field(..., description="Application base URL")
     is_active: bool = Field(..., description="Is application active")
     single_session: bool = Field(..., description="Single session mode enabled")
     created_at: datetime = Field(..., description="Created timestamp")

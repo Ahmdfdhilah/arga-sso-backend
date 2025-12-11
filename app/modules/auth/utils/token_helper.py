@@ -10,6 +10,8 @@ if TYPE_CHECKING:
     from app.modules.auth.services.session_service import SessionService
     from app.modules.auth.services.sso_session_service import SSOSessionService
 
+from app.core.utils.file_upload import generate_signed_url_for_path
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,12 +60,14 @@ class TokenHelper:
             user_id=str(user.id),
             ip_address=ip_address,
         )
-
+        avatar_url = generate_signed_url_for_path(user.avatar_path) if user.avatar_path else None
+        
         user_data = UserData(
             id=str(user.id),
             role=user.role,
             name=user.name,
             email=user.email,
+            avatar_url=avatar_url,
             allowed_apps=allowed_apps,
         )
 
@@ -186,6 +190,7 @@ class TokenHelper:
             role=user.role,
             name=user.name,
             email=user.email,
+            avatar_url=user.avatar_url,
             allowed_apps=allowed_apps,
         )
 

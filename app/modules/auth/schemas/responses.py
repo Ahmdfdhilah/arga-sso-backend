@@ -15,6 +15,7 @@ class UserData(BaseModel):
     role: str = Field(..., description="User role")
     name: Optional[str] = Field(None, description="User name")
     email: Optional[str] = Field(None, description="User email")
+    avatar_url: Optional[str] = Field(None, description="User avatar URL")
     allowed_apps: List[AllowedApp] = Field(
         default_factory=list, description="Allowed applications"
     )
