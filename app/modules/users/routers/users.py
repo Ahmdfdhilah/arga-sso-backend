@@ -60,12 +60,7 @@ async def update_my_profile(
     - Bisa update keduanya sekaligus
     - Avatar: JPG/PNG/WEBP, max 5MB
     """
-    update_data = UserUpdateRequest(
-        name=name,
-        email=email,
-        phone=phone,
-    )
-
+    update_data = UserUpdateRequest(name=name, email=email, phone=phone)
     user = await service.update_user(current_user.id, update_data, avatar_file=avatar)
     return DataResponse(
         error=False,

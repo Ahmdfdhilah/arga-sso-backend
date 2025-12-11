@@ -36,6 +36,13 @@ class UserCommands:
         return user
 
     async def update(self, user: User, data: UserUpdateRequest) -> User:
+        """
+        Update user with partial data.
+        Uses exclude_unset=True to only update fields that were explicitly set.
+        This allows:
+        - Partial updates (only send fields to update)
+        - Setting fields to None (to clear nullable fields)
+        """
         update_dict = data.model_dump(exclude_unset=True)
         for key, value in update_dict.items():
             if isinstance(value, (UserRole, UserStatus)):
