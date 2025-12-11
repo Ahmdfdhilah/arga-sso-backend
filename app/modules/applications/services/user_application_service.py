@@ -24,9 +24,9 @@ class UserApplicationService:
 
     async def get_user_applications(self, user_id: str) -> List[AllowedAppResponse]:
         apps = await self.app_queries.get_user_applications(user_id)
-        return [
-            AllowedAppResponse(id=str(a.id), code=a.code, name=a.name) for a in apps
-        ]
+        # Return full application objects so AllowedAppResponse can map all fields
+        return [AllowedAppResponse.model_validate(a) for a in apps]
+
 
     async def assign_applications_to_user(
         self, user_id: str, application_ids: List[str]
