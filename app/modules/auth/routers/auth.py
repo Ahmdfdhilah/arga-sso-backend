@@ -108,6 +108,9 @@ async def google_oauth_callback(
     request: Request,
     oauth_service: OAuth2GoogleServiceDep,
     code: str = Query(..., description="Authorization code dari Google"),
+    redirect_uri: Optional[str] = Query(
+        None, description="Redirect URI yang digunakan saat authorization"
+    ),
     client_id: Optional[str] = Query(
         None, description="Application client ID (None for SSO)"
     ),
@@ -130,6 +133,7 @@ async def google_oauth_callback(
 
     result = await oauth_service.handle_callback(
         code=code,
+        redirect_uri=redirect_uri,
         client_id=client_id,
         device_info=parsed_device_info,
         ip_address=ip_address,

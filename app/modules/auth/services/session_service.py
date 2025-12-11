@@ -65,7 +65,15 @@ class SessionService:
         if not device_id:
             device_id = str(uuid.uuid4())
 
-        # Enforce single_session rule: delete all existing sessions for this client
+        existing_sessions = await self.get_client_sessions(user_id, client_id)
+     
+        if single_session and len(existing_sessions) > 0:
+            from app.core.exceptions import BadRequestException
+            raise BadRequestException("Anda sudah login di perangkat lain. Silakan logout terlebih dahulu.")
+
+        if not single_session and len(existing_sessions) >= settings.MAX_ACTIVE_SESSIONS:
+            from app.core.exceptions import BadRequestException
+            raise BadRequestException(f"Batas maksimum sesi tercapai ({settings.MAX_ACTIVE_SESSIONS}). Silakan logout dari perangkat lain.")
         if single_session:
             await self.delete_client_sessions(user_id, client_id)
 
@@ -81,7 +89,6 @@ class SessionService:
             "last_activity": get_utc_now().isoformat(),
         }
 
-        # Store session with new key structure
         session_key = self._session_key(user_id, client_id, device_id)
         await self.redis.setex(
             session_key,
@@ -89,12 +96,9 @@ class SessionService:
             json.dumps(session_data),
         )
 
-        # Track device for this client
         client_sessions_key = self._client_sessions_key(user_id, client_id)
         await self.redis.sadd(client_sessions_key, device_id)  # type: ignore
         await self.redis.expire(client_sessions_key, self.SESSION_TTL)
-
-        # Also track at user level (all clients)
         user_sessions_key = self._user_sessions_key(user_id)
         await self.redis.sadd(user_sessions_key, f"{client_id}:{device_id}")  # type: ignore
         await self.redis.expire(user_sessions_key, self.SESSION_TTL)
@@ -188,7 +192,6 @@ class SessionService:
                 await self.redis.delete(session_key)
                 deleted_count += 1
 
-                # Clean up client_sessions
                 client_sessions_key = self._client_sessions_key(user_id, client_id)
                 await self.redis.srem(client_sessions_key, device_id)  # type: ignore
             except ValueError:

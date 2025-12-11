@@ -66,12 +66,16 @@ class OAuth2GoogleSecurityService:
         return auth_url
 
     @classmethod
-    async def exchange_code_for_token(cls, code: str) -> str:
+    async def exchange_code_for_token(
+        cls, code: str, redirect_uri: Optional[str] = None
+    ) -> str:
         """
         Exchange authorization code untuk access token.
 
         Args:
             code: Authorization code dari Google
+            redirect_uri: Redirect URI yang digunakan saat authorization request.
+                         Harus sama persis dengan yang dikirim ke Google saat request auth.
 
         Returns:
             Access token dari Google
@@ -81,6 +85,8 @@ class OAuth2GoogleSecurityService:
         """
         logger.info("Exchanging authorization code for access token")
 
+        redirect_uri = redirect_uri or settings.GOOGLE_REDIRECT_URI
+
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -89,7 +95,7 @@ class OAuth2GoogleSecurityService:
                         "code": code,
                         "client_id": settings.GOOGLE_CLIENT_ID,
                         "client_secret": settings.GOOGLE_CLIENT_SECRET,
-                        "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+                        "redirect_uri": redirect_uri,
                         "grant_type": "authorization_code",
                     },
                     headers={"Content-Type": "application/x-www-form-urlencoded"},
@@ -162,7 +168,6 @@ class OAuth2GoogleSecurityService:
             logger.error(f"Unexpected error during user info retrieval: {str(e)}")
             raise UnauthorizedException("Gagal memproses data user dari Google")
 
-        # Validate required fields
         google_id = user_info.get("id")
         email = user_info.get("email")
 
@@ -183,12 +188,15 @@ class OAuth2GoogleSecurityService:
         return google_user
 
     @classmethod
-    async def verify_and_get_user(cls, code: str) -> GoogleUser:
+    async def verify_and_get_user(
+        cls, code: str, redirect_uri: Optional[str] = None
+    ) -> GoogleUser:
         """
         Convenience method untuk verify code dan get user info dalam satu call.
 
         Args:
             code: Authorization code dari Google
+            redirect_uri: Redirect URI yang digunakan saat authorization request
 
         Returns:
             GoogleUser object dengan informasi user
@@ -199,7 +207,7 @@ class OAuth2GoogleSecurityService:
         """
         logger.info("Verifying authorization code and retrieving user info")
 
-        access_token = await cls.exchange_code_for_token(code)
+        access_token = await cls.exchange_code_for_token(code, redirect_uri)
         google_user = await cls.get_user_info(access_token)
 
         return google_user

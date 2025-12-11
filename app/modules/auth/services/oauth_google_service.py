@@ -53,13 +53,16 @@ class OAuth2GoogleService:
     async def handle_callback(
         self,
         code: str,
+        redirect_uri: Optional[str] = None,
         client_id: Optional[str] = None,
         device_info: Optional[Dict[str, Any]] = None,
         ip_address: Optional[str] = None,
         fcm_token: Optional[str] = None,
     ) -> LoginResponse:
         """Handle OAuth2 Google callback."""
-        google_user = await OAuth2GoogleSecurityService.verify_and_get_user(code)
+        google_user = await OAuth2GoogleSecurityService.verify_and_get_user(
+            code, redirect_uri
+        )
 
         auth_provider = await self.auth_queries.get_by_provider_user_id(
             provider=AuthProvider.GOOGLE.value,
