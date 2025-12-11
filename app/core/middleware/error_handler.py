@@ -24,13 +24,68 @@ ERROR_MESSAGES_ID = {
 
 
 class ErrorHandlerMiddleware(BaseHTTPMiddleware):
+    
+    def _handle_integrity_error(self, error):
+        """Parse IntegrityError and raise appropriate ConflictException."""
+        from app.core.exceptions import ConflictException
+        
+        error_str = str(error.orig) if hasattr(error, 'orig') else str(error)
+        
+        # Unique constraint violations
+        if "UniqueViolationError" in error_str or "unique constraint" in error_str.lower():
+            if "users_email_key" in error_str or "email" in error_str.lower():
+                raise ConflictException(
+                    message="Email sudah terdaftar",
+                    error_code="DUPLICATE_EMAIL"
+                )
+            elif "users_phone_key" in error_str or "phone" in error_str.lower():
+                raise ConflictException(
+                    message="Nomor telepon sudah terdaftar",
+                    error_code="DUPLICATE_PHONE"
+                )
+            else:
+                raise ConflictException(
+                    message="Data sudah ada dalam sistem",
+                    error_code="DUPLICATE_ENTRY"
+                )
+        
+        # Foreign key violations
+        elif "ForeignKeyViolationError" in error_str or "foreign key" in error_str.lower():
+            raise ConflictException(
+                message="Data terkait tidak ditemukan",
+                error_code="FOREIGN_KEY_VIOLATION"
+            )
+        
+        # Not null violations
+        elif "NotNullViolationError" in error_str or "not-null" in error_str.lower():
+            from app.core.exceptions import BadRequestException
+            raise BadRequestException(
+                message="Data wajib tidak boleh kosong",
+                error_code="NOT_NULL_VIOLATION"
+            )
+        
+        # Check constraint violations
+        elif "CheckViolationError" in error_str or "check constraint" in error_str.lower():
+            from app.core.exceptions import BadRequestException
+            raise BadRequestException(
+                message="Data tidak valid atau melanggar aturan",
+                error_code="CHECK_CONSTRAINT_VIOLATION"
+            )
+        
+        else:
+            logger.error(f"Unhandled IntegrityError: {error_str}")
+            from app.core.exceptions import DatabaseException
+            raise DatabaseException(
+                message="Terjadi kesalahan pada database"
+            )
+    
     async def dispatch(self, request: Request, call_next):
         try:
             response = await call_next(request)
             return response
         except AppException as e:
             logger.warning(f"AppException: {e.message} (status={e.status_code})")
-            return JSONResponse(
+            response = JSONResponse(
                 status_code=e.status_code,
                 content={
                     "error": True,
@@ -40,9 +95,41 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
                     "timestamp": datetime.utcnow().isoformat(),
                 },
             )
+            # Add CORS headers
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+            return response
         except Exception as e:
+            # Check if it's an IntegrityError
+            from sqlalchemy.exc import IntegrityError
+            if isinstance(e, IntegrityError):
+                try:
+                    self._handle_integrity_error(e)
+                except AppException as app_exc:
+                    # Re-handle the raised AppException
+                    logger.warning(f"{app_exc.__class__.__name__}: {app_exc.message}")
+                    response = JSONResponse(
+                        status_code=app_exc.status_code,
+                        content={
+                            "error": True,
+                            "message": app_exc.message,
+                            "error_code": app_exc.error_code,
+                            "details": app_exc.details,
+                            "timestamp": datetime.utcnow().isoformat(),
+                        },
+                    )
+                    # Add CORS headers
+                    response.headers["Access-Control-Allow-Origin"] = "*"
+                    response.headers["Access-Control-Allow-Credentials"] = "true"
+                    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+                    response.headers["Access-Control-Allow-Headers"] = "*"
+                    return response
+            
+            # Generic error handler
             logger.exception(f"Unhandled exception: {str(e)}")
-            return JSONResponse(
+            response = JSONResponse(
                 status_code=500,
                 content={
                     "error": True,
@@ -54,6 +141,12 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
                     "timestamp": datetime.utcnow().isoformat(),
                 },
             )
+            # Add CORS headers
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+            return response
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):

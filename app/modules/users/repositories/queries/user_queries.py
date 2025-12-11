@@ -30,6 +30,8 @@ class UserQueries:
         offset: int = 0,
         status: Optional[str] = None,
         role: Optional[str] = None,
+        search: Optional[str] = None,
+        gender: Optional[str] = None,
     ) -> tuple[List[User], int]:
         stmt = select(User).where(User.deleted_at.is_(None))
 
@@ -37,12 +39,28 @@ class UserQueries:
             stmt = stmt.where(User.status == status)
         if role:
             stmt = stmt.where(User.role == role)
+        if gender:
+            stmt = stmt.where(User.gender == gender)
+        if search:
+            search_pattern = f"%{search}%"
+            stmt = stmt.where(
+                (User.name.ilike(search_pattern)) |
+                (User.email.ilike(search_pattern))
+            )
 
         count_stmt = select(func.count(User.id)).where(User.deleted_at.is_(None))
         if status:
             count_stmt = count_stmt.where(User.status == status)
         if role:
             count_stmt = count_stmt.where(User.role == role)
+        if gender:
+            count_stmt = count_stmt.where(User.gender == gender)
+        if search:
+            search_pattern = f"%{search}%"
+            count_stmt = count_stmt.where(
+                (User.name.ilike(search_pattern)) |
+                (User.email.ilike(search_pattern))
+            )
 
         total = await self.session.scalar(count_stmt)
 

@@ -65,6 +65,8 @@ class UserCrudService:
         limit: int = 20,
         status: Optional[str] = None,
         role: Optional[str] = None,
+        search: Optional[str] = None,
+        gender: Optional[str] = None,
     ) -> Tuple[List[UserListItemResponse], int]:
         """Return list of users with total count for pagination."""
         offset = (page - 1) * limit
@@ -73,6 +75,8 @@ class UserCrudService:
             offset=offset,
             status=status,
             role=role,
+            search=search,
+            gender=gender,
         )
         return [UserListItemResponse.model_validate(u) for u in users], total
 

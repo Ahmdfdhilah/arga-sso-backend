@@ -67,7 +67,7 @@ async def update_my_profile(
     
     PATCH semantics: only fields present in FormData will be updated.
     """
-    # Parse date_of_birth from string if provided
+
     from datetime import datetime as dt
     parsed_dob = None
     if date_of_birth:
@@ -126,15 +126,19 @@ async def list_users(
     service: UserCrudServiceDep,
     current_user: UserData = Depends(require_admin),
     page: Annotated[int, Query(ge=1)] = 1,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    limit: Annotated[int, Query(ge=1, le=250)] = 20,
     status_filter: Optional[str] = Query(None, alias="status"),
     role: Optional[str] = None,
+    search: Optional[str] = Query(None, description="Search by name or email"),
+    gender: Optional[str] = Query(None, description="Filter by gender (male/female)"),
 ) -> PaginatedResponse[UserListItemResponse]:
     users, total = await service.list_users(
         page=page,
         limit=limit,
         status=status_filter,
         role=role,
+        search=search,
+        gender=gender,
     )
 
     total_pages = (total + limit - 1) // limit
