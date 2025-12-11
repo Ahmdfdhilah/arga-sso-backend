@@ -68,6 +68,8 @@ def upgrade() -> None:
             sa.Column('code', sa.String(length=100), nullable=False),
             sa.Column('description', sa.Text(), nullable=True),
             sa.Column('base_url', sa.String(length=500), nullable=False),
+            sa.Column('img_path', sa.String(length=500), nullable=True),
+            sa.Column('icon_path', sa.String(length=500), nullable=True),
             sa.Column('is_active', sa.Boolean(), nullable=False),
             sa.Column('single_session', sa.Boolean(), nullable=False, server_default=sa.text('false'), comment='If True, only 1 session allowed per device for this app'),
             sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),

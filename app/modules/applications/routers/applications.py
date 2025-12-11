@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, status, Form, File, UploadFile
 
 from app.core.schemas import (
     BaseResponse,
@@ -24,9 +24,6 @@ from app.modules.applications.schemas import (
 )
 
 router = APIRouter()
-
-
-# ============ Application CRUD ============
 
 
 @router.get(
@@ -69,15 +66,28 @@ async def list_applications(
     summary="Create application (Admin only)",
 )
 async def create_application(
-    data: ApplicationCreateRequest,
     service: ApplicationCrudServiceDep,
+    name: str = Form(..., min_length=2, max_length=255),
+    code: str = Form(..., min_length=2, max_length=100, pattern=r"^[a-z0-9_-]+$"),
+    base_url: str = Form(..., min_length=1, max_length=500),
+    description: Optional[str] = Form(None),
+    single_session: bool = Form(False),
+    img: Optional[UploadFile] = File(None),
+    icon: Optional[UploadFile] = File(None),
+   
     current_user: UserData = Depends(require_admin),
 ) -> DataResponse[ApplicationResponse]:
-    app = await service.create_application(data)
+    app = await service.create_application(
+        name=name,
+        code=code,
+        base_url=base_url,
+        description=description,
+        single_session=single_session,
+        img_file=img,
+        icon_file=icon,
+    )
     return DataResponse(error=False, message="Aplikasi berhasil dibuat", data=app)
 
-
-# Static routes BEFORE dynamic routes
 @router.get(
     "/my-apps",
     response_model=DataResponse[List[AllowedAppResponse]],
@@ -96,7 +106,6 @@ async def get_my_applications(
     )
 
 
-# Dynamic route AFTER static routes
 @router.get(
     "/{app_id}",
     response_model=DataResponse[ApplicationResponse],
@@ -120,11 +129,28 @@ async def get_application(
 )
 async def update_application(
     app_id: str,
-    data: ApplicationUpdateRequest,
     service: ApplicationCrudServiceDep,
+    name: Optional[str] = Form(None, min_length=2, max_length=255),
+    code: Optional[str] = Form(None, min_length=2, max_length=100, pattern=r"^[a-z0-9_-]+$"),
+    base_url: Optional[str] = Form(None, min_length=1, max_length=500),
+    description: Optional[str] = Form(None),
+    is_active: Optional[bool] = Form(None),
+    single_session: Optional[bool] = Form(None),
+    img: Optional[UploadFile] = File(None),
+    icon: Optional[UploadFile] = File(None),
     current_user: UserData = Depends(require_admin),
 ) -> DataResponse[ApplicationResponse]:
-    app = await service.update_application(app_id, data)
+    app = await service.update_application(
+        app_id=app_id,
+        name=name,
+        code=code,
+        base_url=base_url,
+        description=description,
+        is_active=is_active,
+        single_session=single_session,
+        img_file=img,
+        icon_file=icon,
+    )
     return DataResponse(error=False, message="Aplikasi berhasil diperbarui", data=app)
 
 
@@ -141,9 +167,6 @@ async def delete_application(
 ) -> BaseResponse:
     await service.delete_application(app_id)
     return BaseResponse(error=False, message="Aplikasi berhasil dihapus")
-
-
-# ============ User Application Management ============
 
 
 @router.get(

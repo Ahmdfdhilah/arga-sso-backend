@@ -37,7 +37,6 @@ async def download_and_upload_avatar_from_url(
     try:
         logger.info(f"Downloading avatar from {avatar_url} for user {user_id}")
 
-        # 1. Download avatar dari URL
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(avatar_url)
             response.raise_for_status()
@@ -55,10 +54,8 @@ async def download_and_upload_avatar_from_url(
                 logger.warning(f"Avatar too large: {len(file_content)} bytes")
                 return None
 
-        # 2. Get GCP storage client
         storage_client = get_gcp_storage_client()
 
-        # 3. Determine file extension from content-type
         ext = ".jpg"  # default
         if "png" in content_type:
             ext = ".png"
@@ -67,13 +64,12 @@ async def download_and_upload_avatar_from_url(
         elif "gif" in content_type:
             ext = ".gif"
 
-        # 4. Generate unique filename
         destination_path = storage_client.generate_unique_filename(
             original_filename=f"avatar{ext}", prefix=f"users/{user_id}/avatar"
         )
-
-        # 5. Upload to GCP
-        storage_client.upload_file(
+        import asyncio
+        await asyncio.to_thread(
+            storage_client.upload_file,
             file_content=file_content,
             destination_path=destination_path,
             content_type=content_type,
@@ -81,10 +77,9 @@ async def download_and_upload_avatar_from_url(
 
         logger.info(f"Avatar uploaded to GCP: {destination_path}")
 
-        # 6. Delete old avatar if exists
         if old_avatar_path:
             try:
-                storage_client.delete_file(old_avatar_path)
+                await asyncio.to_thread(storage_client.delete_file, old_avatar_path)
                 logger.info(f"Old avatar deleted: {old_avatar_path}")
             except Exception as e:
                 logger.warning(f"Failed to delete old avatar {old_avatar_path}: {e}")

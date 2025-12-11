@@ -21,6 +21,7 @@ class ApplicationCommands:
         base_url: str,
         description: Optional[str] = None,
         is_active: bool = True,
+        single_session: bool = False,
     ) -> Application:
         application = Application(
             id=uuid.uuid4(),
@@ -29,6 +30,7 @@ class ApplicationCommands:
             base_url=base_url,
             description=description,
             is_active=is_active,
+            single_session=single_session,
         )
         self.session.add(application)
         await self.session.flush()

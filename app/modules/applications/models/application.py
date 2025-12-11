@@ -25,6 +25,8 @@ class Application(Base):
     )
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     base_url: Mapped[str] = mapped_column(String(500), nullable=False)
+    img_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    icon_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     single_session: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False, comment="If True, only 1 session allowed per device for this app"

@@ -385,8 +385,9 @@ async def upload_file_to_gcp(
     )
     logger.debug(f"Destination path: {destination_path}")
 
-    # 5. Upload to GCP
-    signed_url = storage_client.upload_file(
+    import asyncio
+    signed_url = await asyncio.to_thread(
+        storage_client.upload_file,
         file_content=file_content,
         destination_path=destination_path,
         content_type=mime_type,

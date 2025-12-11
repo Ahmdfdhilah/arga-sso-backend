@@ -9,8 +9,7 @@ class AllowedApp(BaseModel):
     id: str = Field(..., description="Application UUID")
     code: str = Field(..., description="Application code")
     name: str = Field(..., description="Application name")
-
-
+    
 class UserData(BaseModel):
     id: str = Field(..., description="User ID")
     role: str = Field(..., description="User role")

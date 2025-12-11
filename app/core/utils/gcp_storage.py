@@ -126,11 +126,11 @@ class GCPStorageClient:
             expiration: Waktu expired URL (default 7 hari)
 
         Returns:
-            Optional[str]: Signed URL atau None jika file tidak ada
+            Optional[str]: Signed URL atau None jika error
 
         Note:
-            Bucket menggunakan uniform bucket-level access, jadi tidak bisa
-            check ACL per-object. Langsung return signed URL untuk semua file.
+            Tidak check exists() karena blocking. Generate signed URL directly.
+            URL akan valid even if file doesn't exist (tapi return 404 saat diakses).
 
         Example:
             >>> from app.core.config import settings
@@ -143,18 +143,17 @@ class GCPStorageClient:
         try:
             blob = self.bucket.blob(file_path)
 
-            # Check if file exists
-            if not blob.exists():
-                return None
-
-            # Return signed URL (skip ACL check karena uniform bucket-level access)
+            # Generate signed URL directly without exists() check to avoid blocking
             return blob.generate_signed_url(
                 version="v4",
                 expiration=expiration,
                 method="GET"
             )
         except Exception as e:
-            print(f"Error getting file URL: {e}")
+            # Log error but don't crash - just return None
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Error generating signed URL for {file_path}: {e}")
             return None
 
     def file_exists(self, file_path: str) -> bool:

@@ -114,7 +114,8 @@ class UserCrudService:
                     try:
                         from app.core.utils.gcp_storage import get_gcp_storage_client
                         storage_client = get_gcp_storage_client()
-                        storage_client.delete_file(user.avatar_path)
+                        import asyncio
+                        await asyncio.to_thread(storage_client.delete_file, user.avatar_path)
                         logger.info(f"Old avatar deleted: {user.avatar_path}")
                     except Exception as e:
                         logger.warning(f"Failed to delete old avatar: {e}")

@@ -60,7 +60,6 @@ async def update_my_profile(
     - Bisa update keduanya sekaligus
     - Avatar: JPG/PNG/WEBP, max 5MB
     """
-    # Build update request from form data
     update_data = UserUpdateRequest(
         name=name,
         email=email,

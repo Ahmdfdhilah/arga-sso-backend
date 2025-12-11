@@ -33,9 +33,13 @@ class TokenHelper:
             for app in user.applications:
                 if app.is_active:
                     allowed_apps.append(
-                        AllowedApp(id=str(app.id), code=app.code, name=app.name)
+                        AllowedApp(
+                            id=str(app.id),
+                            code=app.code,
+                            name=app.name
+                        )
                     )
-                    allowed_app_codes.append(app.code)
+                    allowed_app_codes.append(app.code)  
         return allowed_apps, allowed_app_codes
 
     async def create_login_response(
