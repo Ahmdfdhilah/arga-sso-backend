@@ -16,6 +16,11 @@ class UserListItemResponse(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     avatar_path: Optional[str] = Field(None, exclude=True)
+    alias: Optional[str] = None
+    gender: Optional[str] = None
+    date_of_birth: Optional[datetime] = None
+    address: Optional[str] = None
+    bio: Optional[str] = None
     status: UserStatus
     role: UserRole
     created_at: datetime
@@ -41,11 +46,15 @@ class UserResponse(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     avatar_path: Optional[str] = Field(None, exclude=True)
+    alias: Optional[str] = None
+    gender: Optional[str] = None
+    date_of_birth: Optional[datetime] = None
+    address: Optional[str] = None
+    bio: Optional[str] = None
     status: UserStatus
     role: UserRole
     created_at: datetime
     updated_at: datetime
-    # Joined data
     allowed_apps: List[AllowedApp] = Field(
         default_factory=list, description="User's allowed applications"
     )

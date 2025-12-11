@@ -25,6 +25,14 @@ class User(Base):
     )
     phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, unique=True)
     avatar_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    
+    # Extended profile fields
+    alias: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    gender: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    date_of_birth: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=False), nullable=True)
+    address: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    bio: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+    
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default=UserStatus.ACTIVE.value
     )

@@ -1,4 +1,5 @@
 from typing import Optional
+from datetime import datetime
 from pydantic import BaseModel, Field, EmailStr
 
 from app.core.enums import UserRole, UserStatus
@@ -9,6 +10,11 @@ class UserCreateRequest(BaseModel):
     email: Optional[EmailStr] = None
     phone: Optional[str] = Field(None, pattern=r"^\+?[0-9]{10,15}$")
     avatar_path: Optional[str] = None
+    alias: Optional[str] = Field(None, max_length=100)
+    gender: Optional[str] = Field(None, max_length=20)
+    date_of_birth: Optional[datetime] = None
+    address: Optional[str] = Field(None, max_length=500)
+    bio: Optional[str] = Field(None, max_length=1000)
     role: UserRole = Field(default=UserRole.USER)
     status: UserStatus = Field(default=UserStatus.ACTIVE)
 
@@ -18,5 +24,10 @@ class UserUpdateRequest(BaseModel):
     email: Optional[EmailStr] = None
     phone: Optional[str] = Field(None, pattern=r"^\+?[0-9]{10,15}$")
     avatar_path: Optional[str] = None
+    alias: Optional[str] = Field(None, max_length=100)
+    gender: Optional[str] = Field(None, max_length=20)
+    date_of_birth: Optional[datetime] = None
+    address: Optional[str] = Field(None, max_length=500)
+    bio: Optional[str] = Field(None, max_length=1000)
     role: Optional[UserRole] = None
     status: Optional[UserStatus] = None

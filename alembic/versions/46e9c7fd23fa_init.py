@@ -33,6 +33,13 @@ def upgrade() -> None:
             sa.Column('email', sa.String(length=255), nullable=True),
             sa.Column('phone', sa.String(length=20), nullable=True),
             sa.Column('avatar_path', sa.String(length=500), nullable=True),
+            # Extended profile fields
+            sa.Column('alias', sa.String(length=100), nullable=True),
+            sa.Column('gender', sa.String(length=20), nullable=True),
+            sa.Column('date_of_birth', sa.DateTime(timezone=False), nullable=True),
+            sa.Column('address', sa.String(length=500), nullable=True),
+            sa.Column('bio', sa.String(length=1000), nullable=True),
+            # System fields
             sa.Column('status', sa.String(length=20), nullable=False),
             sa.Column('role', sa.String(length=20), nullable=False),
             sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),

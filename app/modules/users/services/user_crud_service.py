@@ -35,6 +35,11 @@ class UserCrudService:
             email=user.email,
             phone=user.phone,
             avatar_path=user.avatar_path,
+            alias=user.alias,
+            gender=user.gender,
+            date_of_birth=user.date_of_birth,
+            address=user.address,
+            bio=user.bio,
             status=UserStatus(user.status),
             role=UserRole(user.role),
             created_at=user.created_at,
@@ -98,10 +103,9 @@ class UserCrudService:
         if not user:
             raise NotFoundException(f"User {user_id} tidak ditemukan")
 
-        # Handle avatar upload if provided
         if avatar_file and avatar_file.filename:
             try:
-                # Upload avatar to GCP
+        
                 signed_url, avatar_path = await upload_file_to_gcp(
                     file=avatar_file,
                     entity_type="users",
@@ -109,7 +113,7 @@ class UserCrudService:
                     subfolder="avatar"
                 )
 
-                # Delete old avatar if exists
+            
                 if user.avatar_path:
                     try:
                         from app.core.utils.gcp_storage import get_gcp_storage_client
@@ -120,15 +124,12 @@ class UserCrudService:
                     except Exception as e:
                         logger.warning(f"Failed to delete old avatar: {e}")
 
-                # Update avatar_path
+         
                 user.avatar_path = avatar_path
                 logger.info(f"Avatar uploaded for user {user_id}: {avatar_path}")
             except Exception as e:
                 logger.error(f"Failed to upload avatar for user {user_id}: {e}")
-                # Continue with other updates even if avatar upload fails
-                # You can choose to raise exception here if avatar upload is critical
 
-        # Update other user fields
         updated_user = await self.user_commands.update(user, data)
         logger.info(f"User updated: {user_id}")
         return self._build_user_response(updated_user)

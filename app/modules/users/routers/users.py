@@ -1,6 +1,6 @@
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, Query, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, Query, status, UploadFile, File, Form, Request
 
 from app.core.schemas import (
     BaseResponse,
@@ -51,6 +51,11 @@ async def update_my_profile(
     name: Optional[str] = Form(None),
     email: Optional[str] = Form(None),
     phone: Optional[str] = Form(None),
+    alias: Optional[str] = Form(None),
+    gender: Optional[str] = Form(None),
+    date_of_birth: Optional[str] = Form(None, description="ISO format: YYYY-MM-DD"),
+    address: Optional[str] = Form(None),
+    bio: Optional[str] = Form(None),
     avatar: Optional[UploadFile] = File(None, description="Avatar image (optional, max 5MB)"),
 ) -> DataResponse[UserResponse]:
     """
@@ -59,8 +64,31 @@ async def update_my_profile(
     - Bisa update avatar saja tanpa data
     - Bisa update keduanya sekaligus
     - Avatar: JPG/PNG/WEBP, max 5MB
+    
+    PATCH semantics: only fields present in FormData will be updated.
     """
-    update_data = UserUpdateRequest(name=name, email=email, phone=phone)
+    # Parse date_of_birth from string if provided
+    from datetime import datetime as dt
+    parsed_dob = None
+    if date_of_birth:
+        try:
+            parsed_dob = dt.fromisoformat(date_of_birth)
+        except ValueError:
+            pass
+
+    update_data = UserUpdateRequest(
+        **{k: v for k, v in {
+            "name": name, 
+            "email": email, 
+            "phone": phone,
+            "alias": alias,
+            "gender": gender,
+            "date_of_birth": parsed_dob,
+            "address": address,
+            "bio": bio,
+        }.items() if v is not None}
+    )
+
     user = await service.update_user(current_user.id, update_data, avatar_file=avatar)
     return DataResponse(
         error=False,
