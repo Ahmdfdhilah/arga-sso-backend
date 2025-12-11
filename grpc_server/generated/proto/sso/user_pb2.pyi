@@ -1,13 +1,16 @@
+import datetime
+
 from google.protobuf import timestamp_pb2 as _timestamp_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
+from collections.abc import Iterable as _Iterable, Mapping as _Mapping
+from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class User(_message.Message):
-    __slots__ = ("id", "name", "email", "phone", "avatar_path", "status", "role", "created_at", "updated_at")
+    __slots__ = ("id", "name", "email", "phone", "avatar_path", "status", "role", "created_at", "updated_at", "alias", "gender", "date_of_birth", "address", "bio")
     ID_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     EMAIL_FIELD_NUMBER: _ClassVar[int]
@@ -17,6 +20,11 @@ class User(_message.Message):
     ROLE_FIELD_NUMBER: _ClassVar[int]
     CREATED_AT_FIELD_NUMBER: _ClassVar[int]
     UPDATED_AT_FIELD_NUMBER: _ClassVar[int]
+    ALIAS_FIELD_NUMBER: _ClassVar[int]
+    GENDER_FIELD_NUMBER: _ClassVar[int]
+    DATE_OF_BIRTH_FIELD_NUMBER: _ClassVar[int]
+    ADDRESS_FIELD_NUMBER: _ClassVar[int]
+    BIO_FIELD_NUMBER: _ClassVar[int]
     id: str
     name: str
     email: str
@@ -26,7 +34,12 @@ class User(_message.Message):
     role: str
     created_at: _timestamp_pb2.Timestamp
     updated_at: _timestamp_pb2.Timestamp
-    def __init__(self, id: _Optional[str] = ..., name: _Optional[str] = ..., email: _Optional[str] = ..., phone: _Optional[str] = ..., avatar_path: _Optional[str] = ..., status: _Optional[str] = ..., role: _Optional[str] = ..., created_at: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., updated_at: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
+    alias: str
+    gender: str
+    date_of_birth: _timestamp_pb2.Timestamp
+    address: str
+    bio: str
+    def __init__(self, id: _Optional[str] = ..., name: _Optional[str] = ..., email: _Optional[str] = ..., phone: _Optional[str] = ..., avatar_path: _Optional[str] = ..., status: _Optional[str] = ..., role: _Optional[str] = ..., created_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., updated_at: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., alias: _Optional[str] = ..., gender: _Optional[str] = ..., date_of_birth: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., address: _Optional[str] = ..., bio: _Optional[str] = ...) -> None: ...
 
 class GetUserRequest(_message.Message):
     __slots__ = ("user_id",)
@@ -65,19 +78,3 @@ class UserResponse(_message.Message):
     found: bool
     user: User
     def __init__(self, found: bool = ..., user: _Optional[_Union[User, _Mapping]] = ...) -> None: ...
-
-class ValidateTokenRequest(_message.Message):
-    __slots__ = ("access_token",)
-    ACCESS_TOKEN_FIELD_NUMBER: _ClassVar[int]
-    access_token: str
-    def __init__(self, access_token: _Optional[str] = ...) -> None: ...
-
-class ValidateTokenResponse(_message.Message):
-    __slots__ = ("is_valid", "user", "error")
-    IS_VALID_FIELD_NUMBER: _ClassVar[int]
-    USER_FIELD_NUMBER: _ClassVar[int]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    is_valid: bool
-    user: User
-    error: str
-    def __init__(self, is_valid: bool = ..., user: _Optional[_Union[User, _Mapping]] = ..., error: _Optional[str] = ...) -> None: ...

@@ -5,7 +5,7 @@ import warnings
 
 from proto.sso import user_pb2 as proto_dot_sso_dot_user__pb2
 
-GRPC_GENERATED_VERSION = '1.68.1'
+GRPC_GENERATED_VERSION = '1.76.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in proto/sso/user_pb2_grpc.py depends on'
+        + ' but the generated code in proto/sso/user_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -54,11 +54,6 @@ class UserServiceStub(object):
                 request_serializer=proto_dot_sso_dot_user__pb2.BatchGetUsersRequest.SerializeToString,
                 response_deserializer=proto_dot_sso_dot_user__pb2.BatchGetUsersResponse.FromString,
                 _registered_method=True)
-        self.ValidateToken = channel.unary_unary(
-                '/sso.UserService/ValidateToken',
-                request_serializer=proto_dot_sso_dot_user__pb2.ValidateTokenRequest.SerializeToString,
-                response_deserializer=proto_dot_sso_dot_user__pb2.ValidateTokenResponse.FromString,
-                _registered_method=True)
 
 
 class UserServiceServicer(object):
@@ -88,12 +83,6 @@ class UserServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def ValidateToken(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
 
 def add_UserServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -116,11 +105,6 @@ def add_UserServiceServicer_to_server(servicer, server):
                     servicer.BatchGetUsers,
                     request_deserializer=proto_dot_sso_dot_user__pb2.BatchGetUsersRequest.FromString,
                     response_serializer=proto_dot_sso_dot_user__pb2.BatchGetUsersResponse.SerializeToString,
-            ),
-            'ValidateToken': grpc.unary_unary_rpc_method_handler(
-                    servicer.ValidateToken,
-                    request_deserializer=proto_dot_sso_dot_user__pb2.ValidateTokenRequest.FromString,
-                    response_serializer=proto_dot_sso_dot_user__pb2.ValidateTokenResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -231,33 +215,6 @@ class UserService(object):
             '/sso.UserService/BatchGetUsers',
             proto_dot_sso_dot_user__pb2.BatchGetUsersRequest.SerializeToString,
             proto_dot_sso_dot_user__pb2.BatchGetUsersResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def ValidateToken(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/sso.UserService/ValidateToken',
-            proto_dot_sso_dot_user__pb2.ValidateTokenRequest.SerializeToString,
-            proto_dot_sso_dot_user__pb2.ValidateTokenResponse.FromString,
             options,
             channel_credentials,
             insecure,
