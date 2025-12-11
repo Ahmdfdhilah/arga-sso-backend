@@ -1,0 +1,47 @@
+import asyncio
+import logging
+from concurrent import futures
+
+import grpc
+
+from app.config.settings import settings
+from grpc_server.generated.proto.sso import user_pb2_grpc
+from grpc_server.services import UserServicer
+
+logging.basicConfig(
+    level=logging.DEBUG if settings.DEBUG else logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+
+async def serve():
+    server = grpc.aio.server(
+        futures.ThreadPoolExecutor(max_workers=10),
+        options=[
+            ("grpc.max_receive_message_length", 50 * 1024 * 1024),
+            ("grpc.max_send_message_length", 50 * 1024 * 1024),
+        ],
+    )
+
+    user_pb2_grpc.add_UserServiceServicer_to_server(UserServicer(), server)
+
+    listen_addr = f"{settings.GRPC_HOST}:{settings.GRPC_PORT}"
+    server.add_insecure_port(listen_addr)
+
+    logger.info(f"Starting gRPC server on {listen_addr}")
+    await server.start()
+
+    try:
+        await server.wait_for_termination()
+    except KeyboardInterrupt:
+        logger.info("Shutting down gRPC server...")
+        await server.stop(5)
+
+
+def run_server():
+    asyncio.run(serve())
+
+
+if __name__ == "__main__":
+    run_server()

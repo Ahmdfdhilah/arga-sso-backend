@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package sso;
+
+option go_package = "github.com/ahmdfdhilah/arga-sso-service-v2/proto/sso";
+
+import "google/protobuf/timestamp.proto";
+
+service UserService {
+  rpc GetUser (GetUserRequest) returns (UserResponse);
+  rpc GetUserByEmail (GetUserByEmailRequest) returns (UserResponse);
+  rpc GetUserByPhone (GetUserByPhoneRequest) returns (UserResponse);
+  rpc BatchGetUsers (BatchGetUsersRequest) returns (BatchGetUsersResponse);
+  rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse);
+}
+
+message User {
+  string id = 1;
+  string name = 2;
+  optional string email = 3;
+  optional string phone = 4;
+  optional string avatar_path = 5;
+  string status = 6;
+  string role = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetUserByEmailRequest {
+  string email = 1;
+}
+
+message GetUserByPhoneRequest {
+  string phone = 1;
+}
+
+message BatchGetUsersRequest {
+  repeated string user_ids = 1;
+}
+
+message BatchGetUsersResponse {
+  repeated User users = 1;
+}
+
+message UserResponse {
+  bool found = 1;
+  optional User user = 2;
+}
+
+message ValidateTokenRequest {
+  string access_token = 1;
+}
+
+message ValidateTokenResponse {
+  bool is_valid = 1;
+  optional User user = 2;
+  optional string error = 3;
+}
