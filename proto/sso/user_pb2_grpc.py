@@ -54,13 +54,29 @@ class UserServiceStub(object):
                 request_serializer=proto_dot_sso_dot_user__pb2.BatchGetUsersRequest.SerializeToString,
                 response_deserializer=proto_dot_sso_dot_user__pb2.BatchGetUsersResponse.FromString,
                 _registered_method=True)
+        self.CreateUser = channel.unary_unary(
+                '/sso.UserService/CreateUser',
+                request_serializer=proto_dot_sso_dot_user__pb2.CreateUserRequest.SerializeToString,
+                response_deserializer=proto_dot_sso_dot_user__pb2.CreateUserResponse.FromString,
+                _registered_method=True)
+        self.UpdateUser = channel.unary_unary(
+                '/sso.UserService/UpdateUser',
+                request_serializer=proto_dot_sso_dot_user__pb2.UpdateUserRequest.SerializeToString,
+                response_deserializer=proto_dot_sso_dot_user__pb2.UpdateUserResponse.FromString,
+                _registered_method=True)
+        self.DeleteUser = channel.unary_unary(
+                '/sso.UserService/DeleteUser',
+                request_serializer=proto_dot_sso_dot_user__pb2.DeleteUserRequest.SerializeToString,
+                response_deserializer=proto_dot_sso_dot_user__pb2.DeleteUserResponse.FromString,
+                _registered_method=True)
 
 
 class UserServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def GetUser(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Read operations
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -78,6 +94,25 @@ class UserServiceServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def BatchGetUsers(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def CreateUser(self, request, context):
+        """Write operations (for HRIS integration)
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def UpdateUser(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def DeleteUser(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -105,6 +140,21 @@ def add_UserServiceServicer_to_server(servicer, server):
                     servicer.BatchGetUsers,
                     request_deserializer=proto_dot_sso_dot_user__pb2.BatchGetUsersRequest.FromString,
                     response_serializer=proto_dot_sso_dot_user__pb2.BatchGetUsersResponse.SerializeToString,
+            ),
+            'CreateUser': grpc.unary_unary_rpc_method_handler(
+                    servicer.CreateUser,
+                    request_deserializer=proto_dot_sso_dot_user__pb2.CreateUserRequest.FromString,
+                    response_serializer=proto_dot_sso_dot_user__pb2.CreateUserResponse.SerializeToString,
+            ),
+            'UpdateUser': grpc.unary_unary_rpc_method_handler(
+                    servicer.UpdateUser,
+                    request_deserializer=proto_dot_sso_dot_user__pb2.UpdateUserRequest.FromString,
+                    response_serializer=proto_dot_sso_dot_user__pb2.UpdateUserResponse.SerializeToString,
+            ),
+            'DeleteUser': grpc.unary_unary_rpc_method_handler(
+                    servicer.DeleteUser,
+                    request_deserializer=proto_dot_sso_dot_user__pb2.DeleteUserRequest.FromString,
+                    response_serializer=proto_dot_sso_dot_user__pb2.DeleteUserResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -215,6 +265,87 @@ class UserService(object):
             '/sso.UserService/BatchGetUsers',
             proto_dot_sso_dot_user__pb2.BatchGetUsersRequest.SerializeToString,
             proto_dot_sso_dot_user__pb2.BatchGetUsersResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def CreateUser(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sso.UserService/CreateUser',
+            proto_dot_sso_dot_user__pb2.CreateUserRequest.SerializeToString,
+            proto_dot_sso_dot_user__pb2.CreateUserResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def UpdateUser(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sso.UserService/UpdateUser',
+            proto_dot_sso_dot_user__pb2.UpdateUserRequest.SerializeToString,
+            proto_dot_sso_dot_user__pb2.UpdateUserResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DeleteUser(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sso.UserService/DeleteUser',
+            proto_dot_sso_dot_user__pb2.DeleteUserRequest.SerializeToString,
+            proto_dot_sso_dot_user__pb2.DeleteUserResponse.FromString,
             options,
             channel_credentials,
             insecure,
