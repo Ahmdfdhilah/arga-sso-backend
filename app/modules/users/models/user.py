@@ -25,6 +25,7 @@ class User(Base):
     )
     phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, unique=True)
     avatar_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    gender: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # male, female
 
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default=UserStatus.ACTIVE.value

@@ -33,6 +33,7 @@ def upgrade() -> None:
             sa.Column('email', sa.String(length=255), nullable=True),
             sa.Column('phone', sa.String(length=20), nullable=True),
             sa.Column('avatar_path', sa.String(length=500), nullable=True),
+            sa.Column('gender', sa.String(length=20), nullable=True),
             sa.Column('status', sa.String(length=20), nullable=False),
             sa.Column('role', sa.String(length=20), nullable=False),
             sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -40,7 +41,8 @@ def upgrade() -> None:
             sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True),
             sa.PrimaryKeyConstraint('id'),
             sa.UniqueConstraint('email'),
-            sa.UniqueConstraint('phone')
+            sa.UniqueConstraint('phone'),
+            sa.CheckConstraint("gender IN ('male', 'female') OR gender IS NULL", name='ck_users_gender')
         )
     
     # --- Auth Providers Table ---
