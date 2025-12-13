@@ -10,6 +10,9 @@ class FirebaseLoginRequest(BaseModel):
         max_length=100,
         description="Application client ID (code). If null, SSO-only login.",
     )
+    device_id: Optional[str] = Field(
+        None, description="Persistent device ID. If provided, reuses existing session for this device."
+    )
     fcm_token: Optional[str] = Field(
         None, description="FCM token for push notifications"
     )
@@ -26,6 +29,9 @@ class EmailPasswordLoginRequest(BaseModel):
         min_length=2,
         max_length=100,
         description="Application client ID (code). If null, SSO-only login.",
+    )
+    device_id: Optional[str] = Field(
+        None, description="Persistent device ID. If provided, reuses existing session for this device."
     )
     fcm_token: Optional[str] = Field(
         None, description="FCM token for push notifications"
@@ -63,6 +69,9 @@ class OAuth2GoogleCallbackRequest(BaseModel):
         max_length=100,
         description="Application client ID (code). If null, SSO-only login.",
     )
+    device_id: Optional[str] = Field(
+        None, description="Persistent device ID. If provided, reuses existing session for this device."
+    )
     state: Optional[str] = Field(None, description="State parameter untuk security")
     fcm_token: Optional[str] = Field(
         None, description="FCM token for push notifications"
@@ -81,6 +90,9 @@ class SSOTokenExchangeRequest(BaseModel):
         min_length=2,
         max_length=100,
         description="Application client ID (code) to get tokens for",
+    )
+    device_id: Optional[str] = Field(
+        None, description="Persistent device ID. If provided, reuses existing session for this device."
     )
     fcm_token: Optional[str] = Field(
         None, description="FCM token for push notifications"

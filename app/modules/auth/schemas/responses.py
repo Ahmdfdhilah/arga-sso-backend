@@ -15,6 +15,7 @@ class UserData(BaseModel):
     role: str = Field(..., description="User role")
     name: Optional[str] = Field(None, description="User name")
     email: Optional[str] = Field(None, description="User email")
+    avatar_url: Optional[str] = Field(None, description="User avatar URL")
     allowed_apps: List[AllowedApp] = Field(
         default_factory=list, description="Allowed applications"
     )
@@ -33,6 +34,7 @@ class LoginResponse(BaseModel):
 
     - sso_token: Always present
     - access_token/refresh_token: Present if client_id was provided
+    - device_id: Present if client_id was provided (save this for future logins)
     """
 
     sso_token: str = Field(
@@ -43,6 +45,9 @@ class LoginResponse(BaseModel):
     )
     refresh_token: Optional[str] = Field(
         None, description="JWT refresh token (present if client_id provided)"
+    )
+    device_id: Optional[str] = Field(
+        None, description="Device ID for this session (save and reuse for future logins)"
     )
     token_type: str = Field("bearer", description="Token type")
     expires_in: Optional[int] = Field(

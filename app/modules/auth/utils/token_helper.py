@@ -49,6 +49,7 @@ class TokenHelper:
         user: User,
         client_id: Optional[str] = None,
         single_session: bool = False,
+        device_id: Optional[str] = None,
         device_info: Optional[Dict[str, Any]] = None,
         ip_address: Optional[str] = None,
         fcm_token: Optional[str] = None,
@@ -72,6 +73,7 @@ class TokenHelper:
         )
 
         # SSO-only login (no client_id)
+        # Only create SSO token, no need for app session
         if client_id is None:
             access_token = TokenService.create_access_token(
                 user_id=str(user.id),
@@ -80,34 +82,11 @@ class TokenHelper:
                 extra_claims={"allowed_apps": allowed_app_codes},
             )
 
+            # Create minimal refresh token for SSO frontend (no client_id, no device_id)
             refresh_token = TokenService.create_refresh_token(
                 user_id=str(user.id),
                 role=user.role,
                 name=user.name,
-            )
-
-            device_id = await self.session_service.create_session(
-                user_id=str(user.id),
-                client_id="__sso__",
-                refresh_token=refresh_token,
-                single_session=False,
-                device_info=device_info,
-                ip_address=ip_address,
-                fcm_token=fcm_token,
-            )
-
-            refresh_token = TokenService.create_refresh_token(
-                user_id=str(user.id),
-                role=user.role,
-                name=user.name,
-                device_id=device_id,
-            )
-
-            await self.session_service.update_session(
-                user_id=str(user.id),
-                client_id="__sso__",
-                device_id=device_id,
-                refresh_token=refresh_token,
             )
 
             logger.info(f"SSO login: {user.id} ({len(allowed_apps)} apps)")
@@ -141,6 +120,7 @@ class TokenHelper:
             client_id=client_id,
             refresh_token=refresh_token,
             single_session=single_session,
+            device_id=device_id,
             device_info=device_info,
             ip_address=ip_address,
             fcm_token=fcm_token,
@@ -167,6 +147,7 @@ class TokenHelper:
             sso_token=sso_token,
             access_token=access_token,
             refresh_token=refresh_token,
+            device_id=device_id,
             token_type="bearer",
             expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             user=user_data,
@@ -178,6 +159,7 @@ class TokenHelper:
         client_id: str,
         sso_token: str,
         single_session: bool = False,
+        device_id: Optional[str] = None,
         device_info: Optional[Dict[str, Any]] = None,
         ip_address: Optional[str] = None,
         fcm_token: Optional[str] = None,
@@ -185,12 +167,13 @@ class TokenHelper:
         """Create app tokens for SSO exchange (does not recreate SSO session)."""
         allowed_apps, allowed_app_codes = self.extract_allowed_apps_from_user(user)
 
+        avatar_url = generate_signed_url_for_path(user.avatar_path) if user.avatar_path else None
         user_data = UserData(
             id=str(user.id),
             role=user.role,
             name=user.name,
             email=user.email,
-            avatar_url=user.avatar_url,
+            avatar_url=avatar_url,
             allowed_apps=allowed_apps,
         )
 
@@ -213,6 +196,7 @@ class TokenHelper:
             client_id=client_id,
             refresh_token=refresh_token,
             single_session=single_session,
+            device_id=device_id,
             device_info=device_info,
             ip_address=ip_address,
             fcm_token=fcm_token,
@@ -239,6 +223,7 @@ class TokenHelper:
             sso_token=sso_token,
             access_token=access_token,
             refresh_token=refresh_token,
+            device_id=device_id,
             token_type="bearer",
             expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             user=user_data,

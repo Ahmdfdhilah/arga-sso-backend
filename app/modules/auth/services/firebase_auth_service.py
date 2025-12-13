@@ -97,6 +97,7 @@ class FirebaseAuthService:
             user=user,
             client_id=request.client_id,
             single_session=single_session,
+            device_id=request.device_id,
             device_info=request.device_info,
             ip_address=ip_address,
             fcm_token=request.fcm_token,

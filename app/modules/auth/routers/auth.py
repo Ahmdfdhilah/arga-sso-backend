@@ -45,6 +45,7 @@ async def login_with_email(
         email=data.email,
         password=data.password,
         client_id=data.client_id,
+        device_id=data.device_id,
         device_info=data.device_info,
         ip_address=ip_address,
         fcm_token=data.fcm_token,
@@ -114,6 +115,7 @@ async def google_oauth_callback(
     client_id: Optional[str] = Query(
         None, description="Application client ID (None for SSO)"
     ),
+    device_id: Optional[str] = Query(None, description="Persistent device ID"),
     state: Optional[str] = Query(None),
     scope: Optional[str] = Query(None),
     fcm_token: Optional[str] = Query(None, description="FCM token"),
@@ -135,6 +137,7 @@ async def google_oauth_callback(
         code=code,
         redirect_uri=redirect_uri,
         client_id=client_id,
+        device_id=device_id,
         device_info=parsed_device_info,
         ip_address=ip_address,
         fcm_token=fcm_token,
@@ -166,6 +169,7 @@ async def exchange_sso_token(
     result = await auth_service.exchange_sso_token(
         sso_token=data.sso_token,
         client_id=data.client_id,
+        device_id=data.device_id,
         device_info=data.device_info,
         ip_address=ip_address,
         fcm_token=data.fcm_token,
@@ -243,6 +247,25 @@ async def logout_global(
     """Logout dari SEMUA aplikasi dan SEMUA device"""
     await auth_service.logout_all(current_user.id)
     return BaseResponse(error=False, message="Logout dari semua aplikasi berhasil")
+
+
+@router.post(
+    "/logout/sso",
+    response_model=BaseResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Logout SSO session saja (tanpa logout dari aplikasi)",
+)
+async def logout_sso(
+    auth_service: AuthServiceDep,
+    current_user: UserData = Depends(get_current_user),
+) -> BaseResponse:
+    """
+    Logout dari SSO session saja.
+    Endpoint ini untuk SSO frontend yang tidak terdaftar sebagai client.
+    Session di aplikasi lain tetap aktif.
+    """
+    await auth_service.logout_sso(current_user.id)
+    return BaseResponse(error=False, message="Logout SSO berhasil")
 
 
 @router.post(

@@ -42,6 +42,7 @@ class AuthService:
         self,
         sso_token: str,
         client_id: str,
+        device_id: Optional[str] = None,
         device_info: Optional[Dict[str, Any]] = None,
         ip_address: Optional[str] = None,
         fcm_token: Optional[str] = None,
@@ -77,6 +78,7 @@ class AuthService:
             client_id=client_id,
             sso_token=sso_token,
             single_session=app.single_session,
+            device_id=device_id,
             device_info=device_info,
             ip_address=ip_address,
             fcm_token=fcm_token,
@@ -178,7 +180,18 @@ class AuthService:
         """Logout from all clients and all devices."""
         logger.info(f"Logout all attempt for user {user_id}")
         await self.session_service.delete_all_sessions(user_id)
+        await self.sso_session_service.delete_sso_session(user_id)
         logger.info(f"User {user_id} logged out from all clients and devices")
+
+    async def logout_sso(self, user_id: str) -> None:
+        """
+        Logout SSO session only.
+        This invalidates the SSO token but keeps app sessions active.
+        Used by SSO frontend which is not a registered client.
+        """
+        logger.info(f"SSO logout attempt for user {user_id}")
+        await self.sso_session_service.delete_sso_session(user_id)
+        logger.info(f"User {user_id} SSO session deleted")
 
     async def logout_client(self, user_id: str, client_id: str) -> None:
         """Logout from specific client (all devices for that client)."""
