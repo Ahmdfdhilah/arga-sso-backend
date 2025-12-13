@@ -26,7 +26,7 @@ class User(Base):
     phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, unique=True)
     avatar_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     
-    # Extended profile fields
+    # Extended profile fields TODO: hapus
     alias: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     gender: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     date_of_birth: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=False), nullable=True)

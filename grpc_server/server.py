@@ -3,6 +3,10 @@ import logging
 from concurrent import futures
 
 import grpc
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.config.settings import settings
 from proto.sso import user_pb2_grpc, auth_pb2_grpc

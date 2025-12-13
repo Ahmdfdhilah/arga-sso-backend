@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from proto.sso import auth_pb2, auth_pb2_grpc
 from app.config.database import async_session_maker
-from app.config.settings import settings
 from app.modules.users.repositories import UserQueries, UserCommands
 from app.modules.auth.repositories import AuthProviderQueries, AuthProviderCommands
 from app.modules.auth.services import (
@@ -25,6 +24,7 @@ from app.modules.applications.repositories.queries.application_queries import (
 from app.core.security import TokenService
 from app.core.exceptions import UnauthorizedException, NotFoundException, ForbiddenException
 from app.core.utils.file_upload import generate_signed_url_for_path
+from app.config.redis import RedisClient
 
 logger = logging.getLogger(__name__)
 
@@ -78,15 +78,17 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
     async def _get_session(self) -> AsyncSession:
         return async_session_maker()
 
-    def _create_services(self, session: AsyncSession):
+    async def _create_services(self, session: AsyncSession):
         """Create all required services with dependencies."""
         user_queries = UserQueries(session)
         user_commands = UserCommands(session)
         auth_queries = AuthProviderQueries(session)
         auth_commands = AuthProviderCommands(session)
         app_queries = ApplicationQueries(session)
-        session_service = SessionService()
-        sso_session_service = SSOSessionService()
+        
+        redis_client = await RedisClient.get_client()
+        session_service = SessionService(redis_client)
+        sso_session_service = SSOSessionService(redis_client)
 
         auth_service = AuthService(
             user_queries=user_queries,
@@ -230,7 +232,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
 
         try:
             async with await self._get_session() as session:
-                services = self._create_services(session)
+                services = await self._create_services(session)
                 
                 result = await services["email_auth_service"].login(
                     email=request.email,
@@ -268,7 +270,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
 
         try:
             async with await self._get_session() as session:
-                services = self._create_services(session)
+                services = await self._create_services(session)
 
                 firebase_request = FirebaseLoginRequest(
                     firebase_token=request.firebase_token,
@@ -309,7 +311,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
 
         try:
             async with await self._get_session() as session:
-                services = self._create_services(session)
+                services = await self._create_services(session)
 
                 result = await services["auth_service"].refresh_token(
                     refresh_token=request.refresh_token,
@@ -348,7 +350,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
 
         try:
             async with await self._get_session() as session:
-                services = self._create_services(session)
+                services = await self._create_services(session)
 
                 result = await services["auth_service"].exchange_sso_token(
                     sso_token=request.sso_token,
@@ -385,10 +387,10 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
 
         try:
             async with await self._get_session() as session:
-                services = self._create_services(session)
+                services = await self._create_services(session)
                 auth_service = services["auth_service"]
 
-                if request.global_:
+                if request.global_: # type: ignore
                     await auth_service.logout_all(request.user_id)
                     message = "Logged out from all clients and devices"
                 elif request.client_id and request.device_id:
@@ -426,7 +428,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
 
         try:
             async with await self._get_session() as session:
-                services = self._create_services(session)
+                services = await self._create_services(session)
                 session_service = services["session_service"]
 
                 all_sessions = await session_service.get_all_sessions(request.user_id)

@@ -34,7 +34,7 @@ async def get_current_user(
             id=str(user_id),
             role=str(user_role),
             name=payload.get("name"),
-            email=payload.get("email"),
+            email=payload.get("email")
         )
     except Exception as e:
         raise UnauthorizedException(f"Token tidak valid: {str(e)}")

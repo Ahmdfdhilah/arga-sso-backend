@@ -14,7 +14,7 @@ from app.modules.users.repositories import UserQueries, UserCommands
 from app.modules.auth.repositories import AuthProviderCommands
 from app.modules.users.models import User
 from app.core.enums import UserRole, UserStatus, AuthProvider
-from app.core.security import hash_password
+from app.core.security import PasswordService
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,9 @@ def user_to_proto(user: User) -> user_pb2.User:
     
     # Handle optional date_of_birth timestamp
     if user.date_of_birth:
-        proto_user.date_of_birth.CopyFrom(datetime_to_timestamp(user.date_of_birth))
+        dt_proto = datetime_to_timestamp(user.date_of_birth)
+        if dt_proto:
+            proto_user.date_of_birth.CopyFrom(dt_proto)
     
     return proto_user
 
@@ -197,7 +199,7 @@ class UserServicer(user_pb2_grpc.UserServiceServicer):
                     password = generate_temp_password()
                     temp_password = password
 
-                password_hash = hash_password(password)
+                password_hash = PasswordService.hash_password(password)
                 await auth_commands.create(
                     user_id=user.id,
                     provider=AuthProvider.EMAIL.value,
