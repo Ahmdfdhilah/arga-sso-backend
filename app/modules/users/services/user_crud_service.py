@@ -4,6 +4,7 @@ from fastapi import UploadFile
 
 from app.core.exceptions import NotFoundException
 from app.core.utils.file_upload import upload_file_to_gcp, delete_file_from_gcp_url
+from app.core.messaging import event_publisher
 from app.modules.users.repositories import UserQueries, UserCommands
 from app.modules.users.schemas import (
     UserCreateRequest,
@@ -35,12 +36,26 @@ class UserCrudService:
             email=user.email,
             phone=user.phone,
             avatar_path=user.avatar_path,
+            gender=user.gender,
             status=UserStatus(user.status),
             role=UserRole(user.role),
             created_at=user.created_at,
             updated_at=user.updated_at,
             allowed_apps=allowed_apps,
         )
+
+    def _user_to_event_data(self, user: User) -> dict:
+        """Convert user to event payload."""
+        return {
+            "id": str(user.id),
+            "name": user.name,
+            "email": user.email,
+            "phone": user.phone,
+            "gender": user.gender,
+            "avatar_path": user.avatar_path,
+            "status": user.status,
+            "role": user.role,
+        }
 
     async def get_user_by_id(self, user_id: str) -> UserResponse:
         user = await self.user_queries.get_by_id(user_id)
@@ -79,10 +94,18 @@ class UserCrudService:
             email=data.email,
             phone=data.phone,
             avatar_path=data.avatar_path,
+            gender=data.gender,
             role=data.role,
             status=data.status,
         )
         logger.info(f"User created: {user.id}")
+        
+        # Publish event for other services
+        await event_publisher.publish_user_created(
+            str(user.id),
+            self._user_to_event_data(user)
+        )
+        
         return self._build_user_response(user)
 
     async def update_user(
@@ -129,11 +152,25 @@ class UserCrudService:
 
         updated_user = await self.user_commands.update(user, data)
         logger.info(f"User updated: {user_id}")
+        
+        # Publish event for other services
+        await event_publisher.publish_user_updated(
+            str(updated_user.id),
+            self._user_to_event_data(updated_user)
+        )
+        
         return self._build_user_response(updated_user)
 
     async def delete_user(self, user_id: str) -> None:
         user = await self.user_queries.get_by_id(user_id)
         if not user:
             raise NotFoundException(f"User {user_id} tidak ditemukan")
+        
+        # Capture data before delete
+        event_data = self._user_to_event_data(user)
+        
         await self.user_commands.delete(user)
         logger.info(f"User deleted: {user_id}")
+        
+        # Publish event for other services
+        await event_publisher.publish_user_deleted(user_id, event_data)

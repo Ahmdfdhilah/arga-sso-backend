@@ -40,6 +40,7 @@ class UserResponse(BaseModel):
     name: str
     email: Optional[str] = None
     phone: Optional[str] = None
+    gender: Optional[str] = None
     avatar_path: Optional[str] = Field(None, exclude=True)
     status: UserStatus
     role: UserRole

@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from app.config.settings import settings
 from app.config.redis import RedisClient
 from app.core.security.firebase import FirebaseService
+from app.core.messaging.rabbitmq import rabbitmq_manager
 import logging
 
 logger = logging.getLogger(__name__)
@@ -68,8 +69,23 @@ async def lifespan(app: FastAPI):
         logger.error(f"Redis connection failed: {e}")
         raise RuntimeError(f"Cannot start: Redis unavailable - {e}")
 
+    # RabbitMQ initialization
+    try:
+        await rabbitmq_manager.connect()
+        await rabbitmq_manager.setup_exchanges_and_queues()
+        logger.info("RabbitMQ initialized successfully")
+    except Exception as e:
+        logger.warning(f"RabbitMQ initialization failed: {e}. Events will not be published.")
+
     yield
 
     # Shutdown
     logger.info(f"Shutting down {settings.APP_NAME}...")
+    
+    # Disconnect RabbitMQ
+    try:
+        await rabbitmq_manager.disconnect()
+    except Exception as e:
+        logger.warning(f"RabbitMQ disconnect error: {e}")
+    
     await RedisClient.close()
