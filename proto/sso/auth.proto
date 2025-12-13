@@ -1,0 +1,157 @@
+syntax = "proto3";
+
+package sso;
+
+option go_package = "github.com/ahmdfdhilah/arga-sso-service-v2/proto/sso";
+
+import "google/protobuf/timestamp.proto";
+
+
+service AuthService {
+  // Validate JWT token dan return user data
+  rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse);
+  
+  // Login dengan email dan password
+  rpc LoginWithEmail (EmailLoginRequest) returns (LoginResponse);
+  
+  // Login dengan Firebase token
+  rpc LoginWithFirebase (FirebaseLoginRequest) returns (LoginResponse);
+  
+  // Refresh access token
+  rpc RefreshToken (RefreshTokenRequest) returns (RefreshResponse);
+  
+  // Exchange SSO token untuk app-specific tokens
+  rpc ExchangeSSOToken (SSOExchangeRequest) returns (LoginResponse);
+  
+  // Logout (global atau client-specific)
+  rpc Logout (LogoutRequest) returns (LogoutResponse);
+  
+  // Get sessions untuk user
+  rpc GetSessions (GetSessionsRequest) returns (GetSessionsResponse);
+}
+
+// Common types
+message DeviceInfo {
+  optional string platform = 1;
+  optional string device_name = 2;
+  optional string os_version = 3;
+  optional string app_version = 4;
+  map<string, string> extra = 5;
+}
+
+message AllowedApp {
+  string id = 1;
+  string code = 2;
+  string name = 3;
+}
+
+message UserData {
+  string id = 1;
+  string role = 2;
+  optional string name = 3;
+  optional string email = 4;
+  optional string avatar_url = 5;
+  repeated AllowedApp allowed_apps = 6;
+}
+
+// ValidateToken
+message ValidateTokenRequest {
+  string access_token = 1;
+}
+
+message ValidateTokenResponse {
+  bool is_valid = 1;
+  optional UserData user = 2;
+  optional string error = 3;
+}
+
+// Login with Email
+message EmailLoginRequest {
+  string email = 1;
+  string password = 2;
+  optional string client_id = 3;
+  optional DeviceInfo device_info = 4;
+  optional string ip_address = 5;
+  optional string fcm_token = 6;
+}
+
+// Login with Firebase
+message FirebaseLoginRequest {
+  string firebase_token = 1;
+  optional string client_id = 2;
+  optional DeviceInfo device_info = 3;
+  optional string ip_address = 4;
+  optional string fcm_token = 5;
+}
+
+// Login Response (shared by Email, Firebase, SSO Exchange)
+message LoginResponse {
+  bool success = 1;
+  optional string error = 2;
+  
+  optional string sso_token = 3;
+  optional string access_token = 4;
+  optional string refresh_token = 5;
+  string token_type = 6;
+  optional int32 expires_in = 7;
+  optional UserData user = 8;
+}
+
+// Refresh Token
+message RefreshTokenRequest {
+  string refresh_token = 1;
+  string device_id = 2;
+}
+
+message RefreshResponse {
+  bool success = 1;
+  optional string error = 2;
+  
+  optional string access_token = 3;
+  optional string refresh_token = 4;
+  string token_type = 5;
+  optional int32 expires_in = 6;
+}
+
+// SSO Token Exchange
+message SSOExchangeRequest {
+  string sso_token = 1;
+  string client_id = 2;
+  optional DeviceInfo device_info = 3;
+  optional string ip_address = 4;
+  optional string fcm_token = 5;
+}
+
+// Logout
+message LogoutRequest {
+  string user_id = 1;
+  optional string client_id = 2;  // If provided, logout from specific client only
+  optional string device_id = 3;  // If provided with client_id, logout from specific device
+  bool global = 4;                // If true, logout from all clients and devices
+}
+
+message LogoutResponse {
+  bool success = 1;
+  optional string error = 2;
+  string message = 3;
+}
+
+// Sessions
+message GetSessionsRequest {
+  string user_id = 1;
+}
+
+message SessionInfo {
+  string device_id = 1;
+  optional DeviceInfo device_info = 2;
+  optional string ip_address = 3;
+  string client_id = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp last_activity = 6;
+}
+
+message GetSessionsResponse {
+  repeated SessionInfo sessions = 1;
+  int32 total_clients = 2;
+  int32 total_sessions = 3;
+}
