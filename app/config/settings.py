@@ -23,9 +23,10 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
 
-    # JWT
-    JWT_SECRET_KEY: str = "your-super-secret-key-change-in-production"
-    JWT_ALGORITHM: str = "HS256"
+    # JWT (RS256 Asymmetric)
+    JWT_PRIVATE_KEY_PATH: str = "./jwt_private.pem"
+    JWT_PUBLIC_KEY_PATH: str = "./jwt_public.pem"
+    JWT_ALGORITHM: str = "RS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 60
     MAX_ACTIVE_SESSIONS: int = 5

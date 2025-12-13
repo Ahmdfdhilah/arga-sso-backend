@@ -6,7 +6,32 @@ from app.config.settings import settings
 from app.core.exceptions import UnauthorizedException
 
 
+def _load_private_key() -> str:
+    with open(settings.JWT_PRIVATE_KEY_PATH, "r") as f:
+        return f.read()
+
+
+def _load_public_key() -> str:
+    with open(settings.JWT_PUBLIC_KEY_PATH, "r") as f:
+        return f.read()
+
+
 class TokenService:
+    _private_key: Optional[str] = None
+    _public_key: Optional[str] = None
+
+    @classmethod
+    def get_private_key(cls) -> str:
+        if cls._private_key is None:
+            cls._private_key = _load_private_key()
+        return cls._private_key
+
+    @classmethod
+    def get_public_key(cls) -> str:
+        if cls._public_key is None:
+            cls._public_key = _load_public_key()
+        return cls._public_key
+
     @staticmethod
     def create_access_token(
         user_id: str,
@@ -28,7 +53,7 @@ class TokenService:
         if extra_claims:
             payload.update(extra_claims)
         return jwt.encode(
-            payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM
+            payload, TokenService.get_private_key(), algorithm=settings.JWT_ALGORITHM
         )
 
     @staticmethod
@@ -53,14 +78,14 @@ class TokenService:
         if device_id:
             payload["device_id"] = device_id
         return jwt.encode(
-            payload, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM
+            payload, TokenService.get_private_key(), algorithm=settings.JWT_ALGORITHM
         )
 
     @staticmethod
     def verify_token(token: str, token_type: str = "access") -> Dict[str, Any]:
         try:
             payload = jwt.decode(
-                token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
+                token, TokenService.get_public_key(), algorithms=[settings.JWT_ALGORITHM]
             )
             if payload.get("type") != token_type:
                 raise UnauthorizedException(
@@ -75,9 +100,10 @@ class TokenService:
         try:
             return jwt.decode(
                 token,
-                settings.JWT_SECRET_KEY,
+                TokenService.get_public_key(),
                 algorithms=[settings.JWT_ALGORITHM],
                 options={"verify_exp": False},
             )
         except JWTError as e:
             raise UnauthorizedException(f"Invalid token: {str(e)}")
+

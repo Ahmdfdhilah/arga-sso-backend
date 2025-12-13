@@ -65,3 +65,6 @@ alembic/versions/*.pyc
 claude
 
 CLAUDE.md
+
+jwt_private.pem
+jwt_public.pem
