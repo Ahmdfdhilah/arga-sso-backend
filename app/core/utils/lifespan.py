@@ -59,6 +59,15 @@ async def lifespan(app: FastAPI):
             logger.error(f"Failed to run database migrations: {e}")
             raise e
 
+    logger.info("Checking Redis connection...")
+    try:
+        redis = await RedisClient.get_client()
+        await redis.ping()
+        logger.info("Redis connection OK")
+    except Exception as e:
+        logger.error(f"Redis connection failed: {e}")
+        raise RuntimeError(f"Cannot start: Redis unavailable - {e}")
+
     yield
 
     # Shutdown
