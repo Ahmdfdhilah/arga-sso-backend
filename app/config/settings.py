@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     # gRPC
     GRPC_HOST: str = "0.0.0.0"
     GRPC_PORT: int = 50051
+    GRPC_MAX_MESSAGE_SIZE: int = 15 * 1024 * 1024
 
     # RabbitMQ
     RABBITMQ_HOST: str = "localhost"

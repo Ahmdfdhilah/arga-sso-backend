@@ -1,6 +1,4 @@
 import logging
-import secrets
-import string
 from datetime import datetime
 from typing import Optional
 
@@ -15,43 +13,13 @@ from app.modules.auth.repositories import AuthProviderCommands
 from app.modules.users.models import User
 from app.core.enums import UserRole, UserStatus, AuthProvider
 from app.core.security import PasswordService
+from app.grpc.utils import datetime_to_timestamp, generate_temp_password
+from app.grpc.converters import user_to_proto
 
 logger = logging.getLogger(__name__)
 
 
-def generate_temp_password(length: int = 12) -> str:
-    """Generate a secure temporary password."""
-    alphabet = string.ascii_letters + string.digits
-    return ''.join(secrets.choice(alphabet) for _ in range(length))
-
-
-def datetime_to_timestamp(dt: Optional[datetime]) -> Optional[Timestamp]:
-    """Convert datetime to protobuf Timestamp."""
-    if dt is None:
-        return None
-    timestamp = Timestamp()
-    timestamp.FromDatetime(dt)
-    return timestamp
-
-
-def user_to_proto(user: User) -> user_pb2.User:
-    """Convert User model to protobuf User message."""
-    proto_user = user_pb2.User(
-        id=str(user.id),
-        name=user.name,
-        email=user.email or "",
-        phone=user.phone or "",
-        avatar_path=user.avatar_path or "",
-        status=user.status,
-        role=user.role,
-        created_at=datetime_to_timestamp(user.created_at),
-        updated_at=datetime_to_timestamp(user.updated_at),
-    )
-
-    return proto_user
-
-
-class UserServicer(user_pb2_grpc.UserServiceServicer):
+class UserHandler(user_pb2_grpc.UserServiceServicer):
 
     async def _get_session(self) -> AsyncSession:
         return async_session_maker()

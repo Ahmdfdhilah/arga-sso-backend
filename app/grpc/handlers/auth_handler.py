@@ -25,55 +25,14 @@ from app.core.security import TokenService
 from app.core.exceptions import UnauthorizedException, NotFoundException, ForbiddenException
 from app.core.utils.file_upload import generate_signed_url_for_path
 from app.config.redis import RedisClient
+from app.grpc.utils import datetime_to_timestamp, device_info_to_dict, dict_to_device_info
+from app.grpc.converters import user_to_auth_proto, login_result_to_proto
 
 logger = logging.getLogger(__name__)
 
 
-def datetime_to_timestamp(dt: Optional[datetime]) -> Optional[Timestamp]:
-    """Convert datetime to protobuf Timestamp."""
-    if dt is None:
-        return None
-    timestamp = Timestamp()
-    timestamp.FromDatetime(dt)
-    return timestamp
-
-
-def device_info_to_dict(device_info: auth_pb2.DeviceInfo) -> Optional[Dict[str, Any]]:
-    """Convert protobuf DeviceInfo to dict."""
-    if not device_info:
-        return None
-    
-    result = {}
-    if device_info.platform:
-        result["platform"] = device_info.platform
-    if device_info.device_name:
-        result["device_name"] = device_info.device_name
-    if device_info.os_version:
-        result["os_version"] = device_info.os_version
-    if device_info.app_version:
-        result["app_version"] = device_info.app_version
-    if device_info.extra:
-        result["extra"] = dict(device_info.extra)
-    
-    return result if result else None
-
-
-def dict_to_device_info(data: Optional[Dict[str, Any]]) -> Optional[auth_pb2.DeviceInfo]:
-    """Convert dict to protobuf DeviceInfo."""
-    if not data:
-        return None
-    
-    return auth_pb2.DeviceInfo(
-        platform=data.get("platform", ""),
-        device_name=data.get("device_name", ""),
-        os_version=data.get("os_version", ""),
-        app_version=data.get("app_version", ""),
-        extra=data.get("extra", {}),
-    )
-
-
-class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
-    """gRPC servicer for authentication operations."""
+class AuthHandler(auth_pb2_grpc.AuthServiceServicer):
+    """gRPC Handler for authentication operations."""
 
     async def _get_session(self) -> AsyncSession:
         return async_session_maker()
@@ -125,56 +84,6 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
             "session_service": session_service,
         }
 
-    def _user_to_proto(self, user) -> auth_pb2.UserData:
-        """Convert user model to proto UserData."""
-        allowed_apps = []
-        if hasattr(user, "applications") and user.applications:
-            for app in user.applications:
-                allowed_apps.append(
-                    auth_pb2.AllowedApp(
-                        id=str(app.id),
-                        code=app.code,
-                        name=app.name,
-                    )
-                )
-
-        avatar_url = None
-        if hasattr(user, "avatar_path") and user.avatar_path:
-            avatar_url = generate_signed_url_for_path(user.avatar_path)
-
-        return auth_pb2.UserData(
-            id=str(user.id),
-            role=user.role,
-            name=user.name or "",
-            email=user.email or "",
-            avatar_url=avatar_url or "",
-            allowed_apps=allowed_apps,
-        )
-
-    def _login_result_to_proto(self, result) -> auth_pb2.LoginResponse:
-        """Convert login result to proto LoginResponse."""
-        user_data = auth_pb2.UserData(
-            id=result.user.id,
-            role=result.user.role,
-            name=result.user.name or "",
-            email=result.user.email or "",
-            avatar_url=result.user.avatar_url or "",
-            allowed_apps=[
-                auth_pb2.AllowedApp(id=app.id, code=app.code, name=app.name)
-                for app in result.user.allowed_apps
-            ],
-        )
-
-        return auth_pb2.LoginResponse(
-            success=True,
-            sso_token=result.sso_token,
-            access_token=result.access_token or "",
-            refresh_token=result.refresh_token or "",
-            token_type=result.token_type,
-            expires_in=result.expires_in or 0,
-            user=user_data,
-        )
-
     async def ValidateToken(
         self,
         request: auth_pb2.ValidateTokenRequest,
@@ -207,7 +116,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
 
                 return auth_pb2.ValidateTokenResponse(
                     is_valid=True,
-                    user=self._user_to_proto(user),
+                    user=user_to_auth_proto(user),
                 )
 
         except UnauthorizedException as e:
@@ -244,7 +153,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
                 )
 
                 await session.commit()
-                return self._login_result_to_proto(result)
+                return login_result_to_proto(result)
 
         except UnauthorizedException as e:
             return auth_pb2.LoginResponse(
@@ -285,7 +194,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
                 )
 
                 await session.commit()
-                return self._login_result_to_proto(result)
+                return login_result_to_proto(result)
 
         except UnauthorizedException as e:
             return auth_pb2.LoginResponse(
@@ -361,7 +270,7 @@ class AuthServicer(auth_pb2_grpc.AuthServiceServicer):
                 )
 
                 await session.commit()
-                return self._login_result_to_proto(result)
+                return login_result_to_proto(result)
 
         except (UnauthorizedException, ForbiddenException, NotFoundException) as e:
             return auth_pb2.LoginResponse(

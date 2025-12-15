@@ -9,6 +9,7 @@ from app.config.settings import settings
 from app.config.redis import RedisClient
 from app.core.security.firebase import FirebaseService
 from app.core.messaging.rabbitmq import rabbitmq_manager
+from app.grpc import grpc_server
 import logging
 
 logger = logging.getLogger(__name__)
@@ -77,10 +78,23 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"RabbitMQ initialization failed: {e}. Events will not be published.")
 
+    # gRPC server initialization
+    logger.info("Starting gRPC server...")
+    try:
+        await grpc_server.start()
+        logger.info("gRPC server started successfully")
+    except Exception as e:
+        logger.warning(f"Failed to start gRPC server: {e}. gRPC calls will not work.")
+
     yield
 
     # Shutdown
     logger.info(f"Shutting down {settings.APP_NAME}...")
+
+    # Stop gRPC server
+    logger.info("Stopping gRPC server...")
+    await grpc_server.stop()
+    logger.info("gRPC server stopped")
     
     # Disconnect RabbitMQ
     try:
@@ -89,3 +103,4 @@ async def lifespan(app: FastAPI):
         logger.warning(f"RabbitMQ disconnect error: {e}")
     
     await RedisClient.close()
+
