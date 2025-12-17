@@ -15,6 +15,7 @@ from app.core.enums import UserRole, UserStatus, AuthProvider
 from app.core.security import PasswordService
 from app.grpc.utils import datetime_to_timestamp, generate_temp_password
 from app.grpc.converters import user_to_proto
+from app.core.exceptions import BadRequestException, NotFoundException
 
 logger = logging.getLogger(__name__)
 
@@ -31,17 +32,21 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
     ) -> user_pb2.UserResponse:
         logger.info(f"gRPC GetUser called for user_id: {request.user_id}")
 
-        async with await self._get_session() as session:
-            user_queries = UserQueries(session)
-            user = await user_queries.get_by_id(request.user_id)
+        try:
+            async with await self._get_session() as session:
+                user_queries = UserQueries(session)
+                user = await user_queries.get_by_id(request.user_id)
 
-            if not user:
-                return user_pb2.UserResponse(found=False)
+                if not user:
+                    return user_pb2.UserResponse(found=False)
 
-            return user_pb2.UserResponse(
-                found=True,
-                user=user_to_proto(user),
-            )
+                return user_pb2.UserResponse(
+                    found=True,
+                    user=user_to_proto(user),
+                )
+        except Exception as e:
+            logger.error(f"gRPC GetUser failed: {e}", exc_info=True)
+            await context.abort(grpc.StatusCode.INTERNAL, str(e))
 
     async def GetUserByEmail(
         self,
@@ -50,17 +55,21 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
     ) -> user_pb2.UserResponse:
         logger.info(f"gRPC GetUserByEmail called for email: {request.email}")
 
-        async with await self._get_session() as session:
-            user_queries = UserQueries(session)
-            user = await user_queries.get_by_email(request.email)
+        try:
+            async with await self._get_session() as session:
+                user_queries = UserQueries(session)
+                user = await user_queries.get_by_email(request.email)
 
-            if not user:
-                return user_pb2.UserResponse(found=False)
+                if not user:
+                    return user_pb2.UserResponse(found=False)
 
-            return user_pb2.UserResponse(
-                found=True,
-                user=user_to_proto(user),
-            )
+                return user_pb2.UserResponse(
+                    found=True,
+                    user=user_to_proto(user),
+                )
+        except Exception as e:
+            logger.error(f"gRPC GetUserByEmail failed: {e}", exc_info=True)
+            await context.abort(grpc.StatusCode.INTERNAL, str(e))
 
     async def GetUserByPhone(
         self,
@@ -69,17 +78,21 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
     ) -> user_pb2.UserResponse:
         logger.info(f"gRPC GetUserByPhone called for phone: {request.phone}")
 
-        async with await self._get_session() as session:
-            user_queries = UserQueries(session)
-            user = await user_queries.get_by_phone(request.phone)
+        try:
+            async with await self._get_session() as session:
+                user_queries = UserQueries(session)
+                user = await user_queries.get_by_phone(request.phone)
 
-            if not user:
-                return user_pb2.UserResponse(found=False)
+                if not user:
+                    return user_pb2.UserResponse(found=False)
 
-            return user_pb2.UserResponse(
-                found=True,
-                user=user_to_proto(user),
-            )
+                return user_pb2.UserResponse(
+                    found=True,
+                    user=user_to_proto(user),
+                )
+        except Exception as e:
+            logger.error(f"gRPC GetUserByPhone failed: {e}", exc_info=True)
+            await context.abort(grpc.StatusCode.INTERNAL, str(e))
 
     async def BatchGetUsers(
         self,
@@ -88,16 +101,20 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
     ) -> user_pb2.BatchGetUsersResponse:
         logger.info(f"gRPC BatchGetUsers called for {len(request.user_ids)} users")
 
-        users = []
-        async with await self._get_session() as session:
-            user_queries = UserQueries(session)
+        try:
+            users = []
+            async with await self._get_session() as session:
+                user_queries = UserQueries(session)
 
-            for user_id in request.user_ids:
-                user = await user_queries.get_by_id(user_id)
-                if user:
-                    users.append(user_to_proto(user))
+                for user_id in request.user_ids:
+                    user = await user_queries.get_by_id(user_id)
+                    if user:
+                        users.append(user_to_proto(user))
 
-        return user_pb2.BatchGetUsersResponse(users=users)
+            return user_pb2.BatchGetUsersResponse(users=users)
+        except Exception as e:
+            logger.error(f"gRPC BatchGetUsers failed: {e}", exc_info=True)
+            await context.abort(grpc.StatusCode.INTERNAL, str(e))
 
     async def CreateUser(
         self,
@@ -163,9 +180,15 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
                     temporary_password=temp_password,
                 )
 
+            except BadRequestException as e:
+                await session.rollback()
+                return user_pb2.CreateUserResponse(
+                    success=False,
+                    error=str(e)
+                )
             except Exception as e:
                 await session.rollback()
-                logger.error(f"Failed to create user: {e}")
+                logger.error(f"Failed to create user: {e}", exc_info=True)
                 return user_pb2.CreateUserResponse(
                     success=False,
                     error=str(e)
@@ -213,9 +236,21 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
                     user=user_to_proto(user),
                 )
 
+            except NotFoundException as e:
+                await session.rollback()
+                return user_pb2.UpdateUserResponse(
+                    success=False,
+                    error=str(e)
+                )
+            except BadRequestException as e:
+                await session.rollback()
+                return user_pb2.UpdateUserResponse(
+                    success=False,
+                    error=str(e)
+                )
             except Exception as e:
                 await session.rollback()
-                logger.error(f"Failed to update user: {e}")
+                logger.error(f"Failed to update user: {e}", exc_info=True)
                 return user_pb2.UpdateUserResponse(
                     success=False,
                     error=str(e)
@@ -248,9 +283,15 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
 
                 return user_pb2.DeleteUserResponse(success=True)
 
+            except NotFoundException as e:
+                await session.rollback()
+                return user_pb2.DeleteUserResponse(
+                    success=False,
+                    error=str(e)
+                )
             except Exception as e:
                 await session.rollback()
-                logger.error(f"Failed to delete user: {e}")
+                logger.error(f"Failed to delete user: {e}", exc_info=True)
                 return user_pb2.DeleteUserResponse(
                     success=False,
                     error=str(e)
