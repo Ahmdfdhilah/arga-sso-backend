@@ -199,21 +199,23 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
         request: user_pb2.UpdateUserRequest,
         context: grpc.aio.ServicerContext,
     ) -> user_pb2.UpdateUserResponse:
-        """Update user profile."""
+        """Update user profile. Also handles restore by setting status=active."""
         logger.info(f"gRPC UpdateUser called for user_id: {request.user_id}")
 
         async with await self._get_session() as session:
             try:
-                user_queries = UserQueries(session)
-
-                user = await user_queries.get_by_id(request.user_id)
+                from sqlalchemy import select
+                
+                stmt = select(User).where(User.id == request.user_id)
+                result = await session.execute(stmt)
+                user = result.scalar_one_or_none()
+                
                 if not user:
                     return user_pb2.UpdateUserResponse(
                         success=False,
                         error=f"User {request.user_id} tidak ditemukan"
                     )
 
-                # Update fields if provided
                 if request.name:
                     user.name = request.name
                 if request.email:
@@ -224,6 +226,9 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
                     user.role = request.role
                 if request.status:
                     user.status = request.status
+                    if request.status.lower() == "active":
+                        user.deleted_at = None
+                        logger.info(f"Restoring user {request.user_id} - clearing deleted_at")
 
                 await session.flush()
                 await session.commit()

@@ -38,7 +38,8 @@ class TokenHelper:
                         AllowedApp(
                             id=str(app.id),
                             code=app.code,
-                            name=app.name
+                            name=app.name,
+                            base_url=app.base_url
                         )
                     )
                     allowed_app_codes.append(app.code)  

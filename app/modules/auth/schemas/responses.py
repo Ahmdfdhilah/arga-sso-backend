@@ -9,6 +9,7 @@ class AllowedApp(BaseModel):
     id: str = Field(..., description="Application UUID")
     code: str = Field(..., description="Application code")
     name: str = Field(..., description="Application name")
+    base_url: Optional[str] = Field(None, description="Application base URL")
     
 class UserData(BaseModel):
     id: str = Field(..., description="User ID")
