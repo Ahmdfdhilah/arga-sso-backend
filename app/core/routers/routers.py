@@ -5,7 +5,7 @@ Centralized router configuration.
 from typing import Sequence
 from fastapi import FastAPI, APIRouter
 from app.config.settings import settings
-from app.modules.auth.routers import auth_router
+from app.modules.auth.routers import auth_router, jwks_router
 from app.modules.users.routers import users_router
 from app.modules.applications.routers import applications_router
 from app.core.routers.system import router as system_router
@@ -18,6 +18,8 @@ def setup_routers(app: FastAPI) -> None:
         app: FastAPI application instance
     """
     app.include_router(system_router, tags=["System"])
+    
+    app.include_router(jwks_router)
 
     routers: Sequence[tuple[APIRouter, str, Sequence[str]]] = [
         (auth_router, "/auth", ("Authentication",)),
@@ -29,3 +31,4 @@ def setup_routers(app: FastAPI) -> None:
         app.include_router(
             router, prefix=f"{settings.API_PREFIX}{prefix}", tags=list(tags)
         )
+
