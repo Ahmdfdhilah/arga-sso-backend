@@ -1,26 +1,27 @@
+"""Firebase authentication service facade."""
+
 import logging
 from typing import Optional
 
-from app.core.security import FirebaseService
-from app.core.exceptions import UnauthorizedException
-from app.core.enums import AuthProvider
 from app.modules.auth.repositories import AuthProviderQueries, AuthProviderCommands
 from app.modules.auth.services.session_service import SessionService
 from app.modules.auth.services.sso_session_service import SSOSessionService
-from app.modules.auth.utils.token_helper import TokenHelper
-from app.modules.auth.utils.client_validator import ClientValidator
 from app.modules.auth.schemas import FirebaseLoginRequest, LoginResponse
 from app.modules.users.repositories import UserQueries, UserCommands
-from app.modules.auth.utils.avatar_helper import download_and_upload_avatar_from_url
 from app.modules.applications.repositories.queries.application_queries import (
     ApplicationQueries,
 )
+# Import langsung dari file untuk menghindari circular import
+from app.modules.auth.use_cases.firebase.firebase_login import FirebaseLoginUseCase
 
 logger = logging.getLogger(__name__)
 
 
 class FirebaseAuthService:
-    """Service for Firebase authentication with auto provider linking."""
+    """
+    Firebase authentication service facade.
+    Mengkoordinasikan use cases untuk Firebase authentication.
+    """
 
     def __init__(
         self,
@@ -32,15 +33,16 @@ class FirebaseAuthService:
         sso_session_service: SSOSessionService,
         app_queries: ApplicationQueries,
     ):
-        self.auth_queries = auth_queries
-        self.auth_commands = auth_commands
-        self.user_queries = user_queries
-        self.user_commands = user_commands
-        self.session_service = session_service
-        self.sso_session_service = sso_session_service
-        self.app_queries = app_queries
-        self.token_helper = TokenHelper(session_service, sso_session_service)
-        self.client_validator = ClientValidator(app_queries)
+        # Initialize use case
+        self.firebase_login_uc = FirebaseLoginUseCase(
+            auth_queries,
+            auth_commands,
+            user_queries,
+            user_commands,
+            session_service,
+            sso_session_service,
+            app_queries,
+        )
 
     async def login(
         self,
@@ -48,57 +50,7 @@ class FirebaseAuthService:
         ip_address: Optional[str] = None,
     ) -> LoginResponse:
         """Login dengan Firebase token."""
-        firebase_user = await FirebaseService.verify_token(request.firebase_token)
-
-        auth_provider = await self.auth_queries.get_by_provider_user_id(
-            provider=AuthProvider.FIREBASE.value,
-            provider_user_id=firebase_user.uid,
-        )
-
-        if auth_provider:
-            user = auth_provider.user
-            await self.auth_commands.update_last_used(auth_provider)
-        else:
-            if not firebase_user.email:
-                raise UnauthorizedException("User tidak terdaftar dalam sistem")
-
-            user = await self.user_queries.get_by_email(firebase_user.email)
-            if not user:
-                raise UnauthorizedException("User tidak terdaftar dalam sistem")
-
-            await self.auth_commands.create(
-                user_id=user.id,
-                provider=AuthProvider.FIREBASE.value,
-                provider_user_id=firebase_user.uid,
-            )
-            logger.info(f"Auto-linked Firebase provider to user: {user.id}")
-
-        if firebase_user.picture and not user.avatar_path:
-            try:
-                avatar_path = await download_and_upload_avatar_from_url(
-                    avatar_url=firebase_user.picture,
-                    user_id=str(user.id),
-                    old_avatar_path=user.avatar_path,
-                )
-                if avatar_path:
-                    user.avatar_path = avatar_path
-                    await self.user_commands.session.flush()
-            except Exception as e:
-                logger.warning(f"Failed to auto-save avatar: {e}")
-
-        app = await self.client_validator.validate_client_access(
-            user_id=str(user.id), client_id=request.client_id
-        )
-        single_session = app.single_session if app else False
-
-        logger.info(f"Firebase login: {user.id} -> {request.client_id or 'SSO'}")
-
-        return await self.token_helper.create_login_response(
-            user=user,
-            client_id=request.client_id,
-            single_session=single_session,
-            device_id=request.device_id,
-            device_info=request.device_info,
+        return await self.firebase_login_uc.execute(
+            request=request,
             ip_address=ip_address,
-            fcm_token=request.fcm_token,
         )

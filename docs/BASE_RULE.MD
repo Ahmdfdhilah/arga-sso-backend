@@ -29,7 +29,13 @@ arga-sso-service-v2/
 │           ├── repositories/
 │           │   ├── commands/           # Write operations
 │           │   └── queries/            # Read operations
-│           ├── services/               # Business logic (per use-case)
+│           ├── use_cases/              # One class per operation
+│           │   ├── create_{entity}.py
+│           │   ├── update_{entity}.py
+│           │   ├── delete_{entity}.py
+│           │   ├── get_{entity}.py
+│           │   └── list_{entity}.py
+│           ├── services/               # Lightweight orchestrators
 │           ├── utils/                  # Module-specific helpers
 │           ├── dependencies.py         # DI definitions
 │           └── routers/
@@ -107,21 +113,78 @@ arga-sso-service-v2/
 
 ---
 
-## Services (Per Use-Case)
+## Use Cases (One Class Per Operation)
 
-**Rule**: Satu service = satu use-case. Jangan menumpuk semua logic di satu service.
+**Rule**: Satu use-case class = satu operasi bisnis. Hindari monolithic service dengan banyak method.
 
 ```python
-# ✅ CORRECT - Separated by use-case
-services/
-├── email_auth_service.py      # login_with_email(), register()
-├── firebase_auth_service.py   # login_with_firebase()
-├── session_service.py         # create_session(), delete_session()
-└── auth_service.py            # refresh_token(), logout() - shared ops
+# ✅ CORRECT - Separated by operation (Use Case Pattern)
+use_cases/
+├── create_user.py             # CreateUserUseCase.execute()
+├── update_user.py             # UpdateUserUseCase.execute()
+├── delete_user.py             # DeleteUserUseCase.execute()
+├── get_user.py                # GetUserUseCase.execute()
+└── list_users.py              # ListUsersUseCase.execute()
 
 # ❌ WRONG - Monolithic service
 services/
-└── auth_service.py            # 500+ lines with everything
+└── user_service.py            # 500+ lines with everything
+```
+
+### Use Case Structure
+
+```python
+# use_cases/create_user.py
+from typing import Optional
+from fastapi import UploadFile
+
+class CreateUserUseCase:
+    """Use Case for creating a new user."""
+
+    def __init__(
+        self,
+        queries: UserQueries,
+        commands: UserCommands,
+        event_publisher: Optional[EventPublisher] = None,
+    ):
+        self.queries = queries
+        self.commands = commands
+        self.event_publisher = event_publisher
+
+    async def execute(
+        self,
+        data: UserCreateRequest,
+        avatar_file: Optional[UploadFile] = None,
+    ) -> UserResponse:
+        """Execute the create user use case."""
+        # 1. Validation
+        # 2. Business logic
+        # 3. Persistence
+        # 4. Events
+        return UserResponseBuilder.build(user)
+```
+
+### When to Use Use Cases vs Services
+
+| Scenario | Use |
+|----------|-----|
+| CRUD operations | Use Cases (one per operation) |
+| Complex multi-step operations | Use Cases |
+| Stateless utilities (token, session) | Services |
+| External integrations (Redis, Firebase) | Services |
+
+---
+
+## Services (Lightweight Orchestrators)
+
+**Rule**: Services untuk operasi yang bukan CRUD atau butuh shared state. Jika logic spesifik untuk satu operasi, gunakan Use Case.
+
+```python
+# ✅ CORRECT - Services for specific purposes
+services/
+├── session_service.py         # Redis session management
+├── sso_session_service.py     # SSO-specific session logic
+└── firebase_auth_service.py   # Firebase integration
 ```
 
 ---

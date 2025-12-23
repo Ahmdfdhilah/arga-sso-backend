@@ -54,14 +54,12 @@ def get_sso_session_service(
 
 def get_auth_service(
     user_queries: UserQueries = Depends(get_user_queries),
-    auth_queries: AuthProviderQueries = Depends(get_auth_queries),
     session_service: SessionService = Depends(get_session_service),
     sso_session_service: SSOSessionService = Depends(get_sso_session_service),
     app_queries: ApplicationQueries = Depends(get_app_queries),
 ) -> AuthService:
     return AuthService(
         user_queries=user_queries,
-        auth_queries=auth_queries,
         session_service=session_service,
         sso_session_service=sso_session_service,
         app_queries=app_queries,

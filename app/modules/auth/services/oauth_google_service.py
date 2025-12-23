@@ -1,26 +1,32 @@
+"""OAuth2 Google service facade."""
+
 import logging
 from typing import Optional, Dict, Any
 
-from app.core.security import OAuth2GoogleSecurityService
-from app.core.exceptions import UnauthorizedException
-from app.core.enums import AuthProvider
 from app.modules.auth.repositories import AuthProviderQueries, AuthProviderCommands
 from app.modules.auth.services.session_service import SessionService
 from app.modules.auth.services.sso_session_service import SSOSessionService
-from app.modules.auth.utils.token_helper import TokenHelper
-from app.modules.auth.utils.client_validator import ClientValidator
 from app.modules.auth.schemas import LoginResponse
 from app.modules.users.repositories import UserQueries, UserCommands
-from app.modules.auth.utils.avatar_helper import download_and_upload_avatar_from_url
 from app.modules.applications.repositories.queries.application_queries import (
     ApplicationQueries,
+)
+# Import langsung dari file untuk menghindari circular import
+from app.modules.auth.use_cases.google.get_authorization_url import (
+    GoogleOAuthGetAuthorizationURLUseCase,
+)
+from app.modules.auth.use_cases.google.handle_callback import (
+    GoogleOAuthHandleCallbackUseCase,
 )
 
 logger = logging.getLogger(__name__)
 
 
 class OAuth2GoogleService:
-    """Service untuk OAuth2 Google login."""
+    """
+    OAuth2 Google service facade.
+    Mengkoordinasikan use cases untuk Google OAuth2 authentication.
+    """
 
     def __init__(
         self,
@@ -32,23 +38,23 @@ class OAuth2GoogleService:
         sso_session_service: SSOSessionService,
         app_queries: ApplicationQueries,
     ):
-        self.auth_queries = auth_queries
-        self.auth_commands = auth_commands
-        self.user_queries = user_queries
-        self.user_commands = user_commands
-        self.session_service = session_service
-        self.sso_session_service = sso_session_service
-        self.app_queries = app_queries
-        self.token_helper = TokenHelper(session_service, sso_session_service)
-        self.client_validator = ClientValidator(app_queries)
+        # Initialize use cases
+        self.get_url_uc = GoogleOAuthGetAuthorizationURLUseCase()
+        self.handle_callback_uc = GoogleOAuthHandleCallbackUseCase(
+            auth_queries,
+            auth_commands,
+            user_queries,
+            user_commands,
+            session_service,
+            sso_session_service,
+            app_queries,
+        )
 
     def get_authorization_url(
         self, redirect_uri: Optional[str] = None, state: Optional[str] = None
     ) -> str:
         """Generate Google OAuth2 authorization URL."""
-        return OAuth2GoogleSecurityService.get_authorization_url(
-            redirect_uri=redirect_uri, state=state
-        )
+        return self.get_url_uc.execute(redirect_uri=redirect_uri, state=state)
 
     async def handle_callback(
         self,
@@ -61,57 +67,10 @@ class OAuth2GoogleService:
         fcm_token: Optional[str] = None,
     ) -> LoginResponse:
         """Handle OAuth2 Google callback."""
-        google_user = await OAuth2GoogleSecurityService.verify_and_get_user(
-            code, redirect_uri
-        )
-
-        auth_provider = await self.auth_queries.get_by_provider_user_id(
-            provider=AuthProvider.GOOGLE.value,
-            provider_user_id=google_user.google_id,
-        )
-
-        if auth_provider:
-            user = auth_provider.user
-            await self.auth_commands.update_last_used(auth_provider)
-        else:
-            if not google_user.email:
-                raise UnauthorizedException("User tidak terdaftar dalam sistem")
-
-            user = await self.user_queries.get_by_email(google_user.email)
-            if not user:
-                raise UnauthorizedException("User tidak terdaftar dalam sistem")
-
-            await self.auth_commands.create(
-                user_id=user.id,
-                provider=AuthProvider.GOOGLE.value,
-                provider_user_id=google_user.google_id,
-            )
-            logger.info(f"Auto-linked Google provider to user: {user.id}")
-
-        if google_user.picture and not user.avatar_path:
-            try:
-                avatar_path = await download_and_upload_avatar_from_url(
-                    avatar_url=google_user.picture,
-                    user_id=str(user.id),
-                    old_avatar_path=user.avatar_path,
-                )
-                if avatar_path:
-                    user.avatar_path = avatar_path
-                    await self.user_commands.session.flush()
-            except Exception as e:
-                logger.warning(f"Failed to auto-save avatar: {e}")
-
-        app = await self.client_validator.validate_client_access(
-            user_id=str(user.id), client_id=client_id
-        )
-        single_session = app.single_session if app else False
-
-        logger.info(f"Google login: {user.id} -> {client_id or 'SSO'}")
-
-        return await self.token_helper.create_login_response(
-            user=user,
+        return await self.handle_callback_uc.execute(
+            code=code,
+            redirect_uri=redirect_uri,
             client_id=client_id,
-            single_session=single_session,
             device_id=device_id,
             device_info=device_info,
             ip_address=ip_address,

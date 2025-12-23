@@ -24,7 +24,6 @@ class EventPublisher:
         try:
             channel = await message_engine.get_channel()
             
-            # Ensure exchange exists (idempotent)
             exchange = await channel.declare_exchange(
                 self.EXCHANGE_NAME, 
                 ExchangeType.TOPIC, 
@@ -35,7 +34,6 @@ class EventPublisher:
                 body=json.dumps(event.to_dict(), default=str).encode(),
                 delivery_mode=DeliveryMode.PERSISTENT,
                 content_type="application/json",
-                # Add headers/properties if needed
                 app_id="arga-sso-service",
                 type=event.event_type
             )
@@ -49,10 +47,7 @@ class EventPublisher:
             
         except Exception as e:
             logger.error(f"Failed to publish event {event.event_type}: {e}")
-            # In a real system, you might want to raise or stick in a local DLQ/Buffer
-            # For now, we log and continue (fire and forget pattern)
-
-    # Convenience wrappers for User events
+    
     async def publish_user_created(self, user_id: str, data: Dict[str, Any]) -> None:
         event = DomainEvent(
             event_type="user.created",

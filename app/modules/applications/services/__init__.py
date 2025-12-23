@@ -1,11 +1,3 @@
-from app.modules.applications.services.application_crud_service import (
-    ApplicationCrudService,
-)
-from app.modules.applications.services.user_application_service import (
-    UserApplicationService,
-)
+from app.modules.applications.services.application_service import ApplicationService
 
-__all__ = [
-    "ApplicationCrudService",
-    "UserApplicationService",
-]
+__all__ = ["ApplicationService"]

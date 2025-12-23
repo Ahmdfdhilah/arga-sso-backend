@@ -1,3 +1,3 @@
-from app.modules.users.services.user_crud_service import UserCrudService
+from app.modules.users.services.user_service import UserService
 
-__all__ = ["UserCrudService"]
+__all__ = ["UserService"]

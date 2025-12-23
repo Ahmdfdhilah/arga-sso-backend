@@ -10,13 +10,8 @@ from app.core.schemas import (
 )
 from app.core.security import require_admin, get_current_user
 from app.modules.auth.schemas import UserData
-from app.modules.applications.dependencies import (
-    ApplicationCrudServiceDep,
-    UserApplicationServiceDep,
-)
+from app.modules.applications.dependencies import ApplicationServiceDep
 from app.modules.applications.schemas import (
-    ApplicationCreateRequest,
-    ApplicationUpdateRequest,
     ApplicationResponse,
     ApplicationListItemResponse,
     AllowedAppResponse,
@@ -33,15 +28,13 @@ router = APIRouter()
     summary="List all applications (Admin only)",
 )
 async def list_applications(
-    service: ApplicationCrudServiceDep,
+    service: ApplicationServiceDep,
     current_user: UserData = Depends(require_admin),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     is_active: bool | None = None,
 ) -> PaginatedResponse[ApplicationListItemResponse]:
-    apps, total = await service.list_applications(
-        page=page, limit=limit, is_active=is_active
-    )
+    apps, total = await service.list(page=page, limit=limit, is_active=is_active)
     total_pages = (total + limit - 1) // limit
 
     return PaginatedResponse(
@@ -66,7 +59,7 @@ async def list_applications(
     summary="Create application (Admin only)",
 )
 async def create_application(
-    service: ApplicationCrudServiceDep,
+    service: ApplicationServiceDep,
     name: str = Form(..., min_length=2, max_length=255),
     code: str = Form(..., min_length=2, max_length=100, pattern=r"^[a-z0-9_-]+$"),
     base_url: str = Form(..., min_length=1, max_length=500),
@@ -77,7 +70,7 @@ async def create_application(
    
     current_user: UserData = Depends(require_admin),
 ) -> DataResponse[ApplicationResponse]:
-    app = await service.create_application(
+    app = await service.create(
         name=name,
         code=code,
         base_url=base_url,
@@ -88,6 +81,7 @@ async def create_application(
     )
     return DataResponse(error=False, message="Aplikasi berhasil dibuat", data=app)
 
+
 @router.get(
     "/my-apps",
     response_model=DataResponse[List[AllowedAppResponse]],
@@ -95,7 +89,7 @@ async def create_application(
     summary="Get current user's applications",
 )
 async def get_my_applications(
-    service: UserApplicationServiceDep,
+    service: ApplicationServiceDep,
     current_user: UserData = Depends(get_current_user),
 ) -> DataResponse[List[AllowedAppResponse]]:
     apps = await service.get_user_applications(current_user.id)
@@ -114,10 +108,10 @@ async def get_my_applications(
 )
 async def get_application(
     app_id: str,
-    service: ApplicationCrudServiceDep,
+    service: ApplicationServiceDep,
     current_user: UserData = Depends(require_admin),
 ) -> DataResponse[ApplicationResponse]:
-    app = await service.get_application(app_id)
+    app = await service.get(app_id)
     return DataResponse(error=False, message="Aplikasi berhasil diambil", data=app)
 
 
@@ -129,7 +123,7 @@ async def get_application(
 )
 async def update_application(
     app_id: str,
-    service: ApplicationCrudServiceDep,
+    service: ApplicationServiceDep,
     name: Optional[str] = Form(None, min_length=2, max_length=255),
     code: Optional[str] = Form(None, min_length=2, max_length=100, pattern=r"^[a-z0-9_-]+$"),
     base_url: Optional[str] = Form(None, min_length=1, max_length=500),
@@ -140,7 +134,7 @@ async def update_application(
     icon: Optional[UploadFile] = File(None),
     current_user: UserData = Depends(require_admin),
 ) -> DataResponse[ApplicationResponse]:
-    app = await service.update_application(
+    app = await service.update(
         app_id=app_id,
         name=name,
         code=code,
@@ -162,10 +156,10 @@ async def update_application(
 )
 async def delete_application(
     app_id: str,
-    service: ApplicationCrudServiceDep,
+    service: ApplicationServiceDep,
     current_user: UserData = Depends(require_admin),
 ) -> BaseResponse:
-    await service.delete_application(app_id)
+    await service.delete(app_id)
     return BaseResponse(error=False, message="Aplikasi berhasil dihapus")
 
 
@@ -177,7 +171,7 @@ async def delete_application(
 )
 async def get_user_applications(
     user_id: str,
-    service: UserApplicationServiceDep,
+    service: ApplicationServiceDep,
     current_user: UserData = Depends(require_admin),
 ) -> DataResponse[List[AllowedAppResponse]]:
     apps = await service.get_user_applications(user_id)
@@ -197,7 +191,7 @@ async def get_user_applications(
 async def assign_applications_to_user(
     user_id: str,
     data: UserApplicationAssignRequest,
-    service: UserApplicationServiceDep,
+    service: ApplicationServiceDep,
     current_user: UserData = Depends(require_admin),
 ) -> DataResponse[List[AllowedAppResponse]]:
     apps = await service.assign_applications_to_user(user_id, data.application_ids)
@@ -217,7 +211,7 @@ async def assign_applications_to_user(
 async def remove_application_from_user(
     user_id: str,
     app_id: str,
-    service: UserApplicationServiceDep,
+    service: ApplicationServiceDep,
     current_user: UserData = Depends(require_admin),
 ) -> BaseResponse:
     await service.remove_application_from_user(user_id, app_id)

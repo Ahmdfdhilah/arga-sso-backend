@@ -10,7 +10,7 @@ from app.core.schemas import (
 )
 from app.core.security import get_current_user, require_admin
 from app.modules.auth.schemas import UserData
-from app.modules.users.dependencies import UserCrudServiceDep
+from app.modules.users.dependencies import UserServiceDep
 from app.modules.users.schemas import (
     UserCreateRequest,
     UserUpdateRequest,
@@ -28,10 +28,10 @@ router = APIRouter()
     summary="Get current user profile",
 )
 async def get_my_profile(
-    service: UserCrudServiceDep,
+    service: UserServiceDep,
     current_user: UserData = Depends(get_current_user),
 ) -> DataResponse[UserResponse]:
-    user = await service.get_user_by_id(current_user.id)
+    user = await service.get(current_user.id)
     return DataResponse(
         error=False,
         message="Profil berhasil diambil",
@@ -46,7 +46,7 @@ async def get_my_profile(
     summary="Update current user profile",
 )
 async def update_my_profile(
-    service: UserCrudServiceDep,
+    service: UserServiceDep,
     current_user: UserData = Depends(get_current_user),
     name: Optional[str] = Form(None),
     email: Optional[str] = Form(None),
@@ -71,7 +71,7 @@ async def update_my_profile(
         }.items() if v is not None}
     )
 
-    user = await service.update_user(current_user.id, update_data, avatar_file=avatar)
+    user = await service.update(current_user.id, update_data, avatar_file=avatar)
     return DataResponse(
         error=False,
         message="Profil berhasil diperbarui",
@@ -87,10 +87,10 @@ async def update_my_profile(
 )
 async def get_user(
     user_id: str,
-    service: UserCrudServiceDep,
+    service: UserServiceDep,
     current_user: UserData = Depends(require_admin),
 ) -> DataResponse[UserResponse]:
-    user = await service.get_user_by_id(user_id)
+    user = await service.get(user_id)
     return DataResponse(
         error=False,
         message="User berhasil diambil",
@@ -105,7 +105,7 @@ async def get_user(
     summary="List all users (Admin only)",
 )
 async def list_users(
-    service: UserCrudServiceDep,
+    service: UserServiceDep,
     current_user: UserData = Depends(require_admin),
     page: Annotated[int, Query(ge=1)] = 1,
     limit: Annotated[int, Query(ge=1, le=250)] = 20,
@@ -113,7 +113,7 @@ async def list_users(
     role: Optional[str] = None,
     search: Optional[str] = Query(None, description="Search by name or email"),
 ) -> PaginatedResponse[UserListItemResponse]:
-    users, total = await service.list_users(
+    users, total = await service.list(
         page=page,
         limit=limit,
         status=status_filter,
@@ -146,10 +146,10 @@ async def list_users(
 )
 async def create_user(
     data: UserCreateRequest,
-    service: UserCrudServiceDep,
+    service: UserServiceDep,
     current_user: UserData = Depends(require_admin),
 ) -> DataResponse[UserResponse]:
-    user = await service.create_user(data)
+    user = await service.create(data)
     return DataResponse(
         error=False,
         message="User berhasil dibuat",
@@ -166,10 +166,10 @@ async def create_user(
 async def update_user(
     user_id: str,
     data: UserUpdateRequest,
-    service: UserCrudServiceDep,
+    service: UserServiceDep,
     current_user: UserData = Depends(require_admin),
 ) -> DataResponse[UserResponse]:
-    user = await service.update_user(user_id, data)
+    user = await service.update(user_id, data)
     return DataResponse(
         error=False,
         message="User berhasil diperbarui",
@@ -185,10 +185,10 @@ async def update_user(
 )
 async def delete_user(
     user_id: str,
-    service: UserCrudServiceDep,
+    service: UserServiceDep,
     current_user: UserData = Depends(require_admin),
 ) -> BaseResponse:
-    await service.delete_user(user_id)
+    await service.delete(user_id)
     return BaseResponse(
         error=False,
         message="User berhasil dihapus",
