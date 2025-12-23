@@ -73,21 +73,42 @@ class TokenHelper:
             allowed_apps=allowed_apps,
         )
 
-        # SSO-only login (no client_id)
-        # Only create SSO token, no need for app session
         if client_id is None:
+            sso_client_id = "sso_portal"
+            
             access_token = TokenService.create_access_token(
                 user_id=str(user.id),
                 role=user.role,
                 name=user.name,
+                email=user.email,
+                avatar_url=avatar_url,
                 extra_claims={"allowed_apps": allowed_app_codes},
             )
 
-            # Create minimal refresh token for SSO frontend (no client_id, no device_id)
+            device_id = await self.session_service.create_session(
+                user_id=str(user.id),
+                client_id=sso_client_id,
+                refresh_token="temp",  
+                single_session=False,
+                device_id=device_id,
+                device_info=device_info,
+                ip_address=ip_address,
+                fcm_token=fcm_token,
+            )
+
             refresh_token = TokenService.create_refresh_token(
                 user_id=str(user.id),
                 role=user.role,
                 name=user.name,
+                client_id=sso_client_id,
+                device_id=device_id,
+            )
+
+            await self.session_service.update_session(
+                user_id=str(user.id),
+                client_id=sso_client_id,
+                device_id=device_id,
+                refresh_token=refresh_token,
             )
 
             logger.info(f"SSO login: {user.id} ({len(allowed_apps)} apps)")
@@ -96,6 +117,7 @@ class TokenHelper:
                 sso_token=sso_token,
                 access_token=access_token,
                 refresh_token=refresh_token,
+                device_id=device_id,
                 token_type="bearer",
                 expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
                 user=user_data,
@@ -106,6 +128,8 @@ class TokenHelper:
             user_id=str(user.id),
             role=user.role,
             name=user.name,
+            email=user.email,
+            avatar_url=avatar_url,
             extra_claims={"allowed_apps": allowed_app_codes, "client_id": client_id},
         )
 
@@ -182,6 +206,8 @@ class TokenHelper:
             user_id=str(user.id),
             role=user.role,
             name=user.name,
+            email=user.email,
+            avatar_url=avatar_url,
             extra_claims={"allowed_apps": allowed_app_codes, "client_id": client_id},
         )
 

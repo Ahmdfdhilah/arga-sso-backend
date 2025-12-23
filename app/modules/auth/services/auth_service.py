@@ -95,23 +95,17 @@ class AuthService:
         """
         logger.info("Token refresh attempt")
 
-        # Verify and extract payload
         payload = TokenService.verify_token(refresh_token, token_type="refresh")
         user_id = payload.get("sub")
-        client_id = payload.get("client_id")
+        client_id = payload.get("client_id") or "sso_portal" 
         token_device_id = payload.get("device_id")
 
         if not user_id or not isinstance(user_id, str):
             raise UnauthorizedException("Invalid token payload: missing user_id")
 
-        if not client_id or not isinstance(client_id, str):
-            raise UnauthorizedException("Invalid token payload: missing client_id")
-
-        # Validate device_id matches token
         if token_device_id and token_device_id != device_id:
             raise UnauthorizedException("Device ID mismatch")
 
-        # Validate refresh token in session
         if not await self.session_service.validate_refresh_token(
             user_id=user_id,
             client_id=client_id,
@@ -120,7 +114,6 @@ class AuthService:
         ):
             raise UnauthorizedException("Invalid refresh token or session expired")
 
-        # Get user
         user = await self.user_queries.get_by_id(user_id)
         if not user:
             raise NotFoundException("User tidak ditemukan")
@@ -129,11 +122,15 @@ class AuthService:
             user
         )
 
-        # Create new tokens with client_id
+        from app.core.utils.file_upload import generate_signed_url_for_path
+        avatar_url = generate_signed_url_for_path(user.avatar_path) if user.avatar_path else None
+
         new_access_token = TokenService.create_access_token(
             user_id=str(user.id),
             role=user.role,
             name=user.name,
+            email=user.email,
+            avatar_url=avatar_url,
             extra_claims={
                 "allowed_apps": allowed_app_codes,
                 "client_id": client_id,
@@ -147,7 +144,6 @@ class AuthService:
             device_id=device_id,
         )
 
-        # Update session with new refresh token
         await self.session_service.update_session(
             user_id=user_id,
             client_id=client_id,
@@ -191,11 +187,13 @@ class AuthService:
         """
         logger.info(f"SSO logout attempt for user {user_id}")
         await self.sso_session_service.delete_sso_session(user_id)
+        await self.session_service.delete_client_sessions(user_id, "sso_portal")
         logger.info(f"User {user_id} SSO session deleted")
 
     async def logout_client(self, user_id: str, client_id: str) -> None:
         """Logout from specific client (all devices for that client)."""
         logger.info(f"Client logout attempt for user {user_id}, client {client_id}")
+        
         await self.session_service.delete_client_sessions(user_id, client_id)
         logger.info(f"User {user_id} logged out from client {client_id} (all devices)")
 
@@ -206,7 +204,7 @@ class AuthService:
         logger.info(
             f"Client device logout for user {user_id}, "
             f"client {client_id}, device {device_id}"
-        )
+        )       
         await self.session_service.delete_client_device_session(
             user_id, client_id, device_id
         )

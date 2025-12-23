@@ -37,6 +37,8 @@ class TokenService:
         user_id: str,
         role: str,
         name: Optional[str] = None,
+        email: Optional[str] = None,
+        avatar_url: Optional[str] = None,
         extra_claims: Optional[Dict[str, Any]] = None,
     ) -> str:
         expire = datetime.utcnow() + timedelta(
@@ -46,6 +48,8 @@ class TokenService:
             "sub": user_id,
             "role": role,
             "name": name,
+            "email": email,
+            "avatar_url": avatar_url,
             "type": "access",
             "exp": expire,
             "iat": datetime.utcnow(),
