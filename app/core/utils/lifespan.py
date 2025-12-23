@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from app.config.settings import settings
 from app.config.redis import RedisClient
 from app.core.security.firebase import FirebaseService
-from app.core.messaging.rabbitmq import rabbitmq_manager
+from app.core.messaging.engine import message_engine
 from app.grpc import grpc_server
 import logging
 
@@ -72,9 +72,9 @@ async def lifespan(app: FastAPI):
 
     # RabbitMQ initialization
     try:
-        await rabbitmq_manager.connect()
-        await rabbitmq_manager.setup_exchanges_and_queues()
-        logger.info("RabbitMQ initialized successfully")
+        await message_engine.connect()
+        await message_engine.apply_dlx()
+        logger.info("RabbitMQ initialized successfully (SSO Publisher)")
     except Exception as e:
         logger.warning(f"RabbitMQ initialization failed: {e}. Events will not be published.")
 
@@ -98,7 +98,7 @@ async def lifespan(app: FastAPI):
     
     # Disconnect RabbitMQ
     try:
-        await rabbitmq_manager.disconnect()
+        await message_engine.disconnect()
     except Exception as e:
         logger.warning(f"RabbitMQ disconnect error: {e}")
     

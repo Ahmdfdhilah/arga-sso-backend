@@ -18,6 +18,7 @@ class UserCommands:
         email: Optional[str] = None,
         phone: Optional[str] = None,
         avatar_path: Optional[str] = None,
+        gender: Optional[str] = None, 
         role: UserRole = UserRole.USER,
         status: UserStatus = UserStatus.ACTIVE,
     ) -> User:
@@ -27,6 +28,7 @@ class UserCommands:
             email=email,
             phone=phone,
             avatar_path=avatar_path,
+            gender=gender, 
             role=role.value if isinstance(role, UserRole) else role,
             status=status.value if isinstance(status, UserStatus) else status,
         )

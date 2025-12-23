@@ -4,7 +4,7 @@ from fastapi import UploadFile
 
 from app.core.exceptions import NotFoundException
 from app.core.utils.file_upload import upload_file_to_gcp, delete_file_from_gcp_url
-from app.core.messaging import event_publisher
+from app.core.messaging.publisher.service import event_publisher
 from app.modules.users.repositories import UserQueries, UserCommands
 from app.modules.users.schemas import (
     UserCreateRequest,

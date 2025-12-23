@@ -1,15 +1,12 @@
-"""
-Messaging Infrastructure for SSO
 
-Provides RabbitMQ connection management and event publishing.
-"""
-
-from app.core.messaging.rabbitmq import rabbitmq_manager, RabbitMQManager
-from app.core.messaging.event_publisher import event_publisher, EventPublisher
+from app.core.messaging.engine import message_engine, MessageEngine
+from app.core.messaging.types import DomainEvent
+from app.core.messaging.publisher.service import event_publisher, EventPublisher
 
 __all__ = [
-    "rabbitmq_manager",
-    "RabbitMQManager", 
+    "message_engine", 
+    "MessageEngine", 
+    "DomainEvent",
     "event_publisher",
-    "EventPublisher",
+    "EventPublisher"
 ]
