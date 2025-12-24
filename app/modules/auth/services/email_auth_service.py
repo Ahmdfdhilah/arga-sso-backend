@@ -11,7 +11,6 @@ from app.modules.users.repositories import UserQueries
 from app.modules.applications.repositories.queries.application_queries import (
     ApplicationQueries,
 )
-# Import langsung dari file untuk menghindari circular import
 from app.modules.auth.use_cases.email.email_login import EmailLoginUseCase
 
 logger = logging.getLogger(__name__)

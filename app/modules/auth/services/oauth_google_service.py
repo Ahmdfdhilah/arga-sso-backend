@@ -11,7 +11,6 @@ from app.modules.users.repositories import UserQueries, UserCommands
 from app.modules.applications.repositories.queries.application_queries import (
     ApplicationQueries,
 )
-# Import langsung dari file untuk menghindari circular import
 from app.modules.auth.use_cases.google.get_authorization_url import (
     GoogleOAuthGetAuthorizationURLUseCase,
 )

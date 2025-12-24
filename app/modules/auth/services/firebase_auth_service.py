@@ -11,7 +11,6 @@ from app.modules.users.repositories import UserQueries, UserCommands
 from app.modules.applications.repositories.queries.application_queries import (
     ApplicationQueries,
 )
-# Import langsung dari file untuk menghindari circular import
 from app.modules.auth.use_cases.firebase.firebase_login import FirebaseLoginUseCase
 
 logger = logging.getLogger(__name__)

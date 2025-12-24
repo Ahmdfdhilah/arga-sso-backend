@@ -10,7 +10,6 @@ from app.modules.users.repositories import UserQueries
 from app.modules.applications.repositories.queries.application_queries import (
     ApplicationQueries,
 )
-# Import use cases langsung dari file untuk menghindari circular import
 from app.modules.auth.use_cases.token.exchange_sso_token import (
     ExchangeSSOTokenUseCase,
 )
@@ -41,7 +40,6 @@ class AuthService:
         sso_session_service: SSOSessionService,
         app_queries: ApplicationQueries,
     ):
-        # Initialize use cases
         self.exchange_sso_token_uc = ExchangeSSOTokenUseCase(
             user_queries, session_service, sso_session_service, app_queries
         )
@@ -81,13 +79,6 @@ class AuthService:
             refresh_token=refresh_token,
             device_id=device_id,
         )
-
-    async def logout(self, user_id: str, device_id: Optional[str] = None) -> None:
-        """
-        Global logout - logout dari semua clients dan devices.
-        DEPRECATED: Gunakan logout_all instead.
-        """
-        await self.logout_all_uc.execute(user_id)
 
     async def logout_all(self, user_id: str) -> None:
         """Logout dari semua clients dan semua devices."""
