@@ -121,8 +121,8 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
         request: user_pb2.CreateUserRequest,
         context: grpc.aio.ServicerContext,
     ) -> user_pb2.CreateUserResponse:
-        """Create user with optional email/password auth provider."""
-        logger.info(f"gRPC CreateUser called for email: {request.email}")
+        """Create user with optional email/password auth provider and assign to apps."""
+        logger.info(f"gRPC CreateUser called for email: {request.email}, apps: {list(request.app_codes)}")
 
         async with await self._get_session() as session:
             try:
@@ -130,7 +130,6 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
                 user_commands = UserCommands(session)
                 auth_commands = AuthProviderCommands(session)
 
-                # Check if email already exists
                 existing = await user_queries.get_by_email(request.email)
                 if existing:
                     return user_pb2.CreateUserResponse(
@@ -138,7 +137,6 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
                         error=f"Email {request.email} sudah terdaftar"
                     )
 
-                # Map role string to enum
                 role = UserRole.USER
                 if request.role:
                     try:
@@ -146,7 +144,6 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
                     except ValueError:
                         role = UserRole.USER
 
-                # Create user
                 user = await user_commands.create(
                     name=request.name,
                     email=request.email,
@@ -155,7 +152,6 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
                     status=UserStatus.ACTIVE,
                 )
 
-                # Create email auth provider with password
                 temp_password = None
                 if request.password:
                     password = request.password
@@ -170,6 +166,23 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
                     provider_user_id=request.email,
                     password_hash=password_hash,
                 )
+                
+                if request.app_codes:
+                    from app.modules.applications.repositories import ApplicationQueries, ApplicationCommands
+                    app_queries = ApplicationQueries(session)
+                    app_commands = ApplicationCommands(session)
+                    
+                    app_ids = []
+                    for app_code in request.app_codes:
+                        app = await app_queries.get_by_code(app_code)
+                        if app:
+                            app_ids.append(str(app.id))
+                        else:
+                            logger.warning(f"Application code '{app_code}' not found, skipping")
+                    
+                    if app_ids:
+                        await app_commands.assign_applications_to_user(str(user.id), app_ids)
+                        logger.info(f"Assigned user {user.id} to {len(app_ids)} applications")
 
                 await session.commit()
                 logger.info(f"User created via gRPC: {user.id}")

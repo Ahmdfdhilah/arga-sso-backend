@@ -64,6 +64,7 @@ message CreateUserRequest {
   optional string phone = 3;
   string role = 4;  // "user", "admin", "guest"
   optional string password = 5;  // If not provided, generates temporary password
+  repeated string app_codes = 6;  // Application codes to auto-assign user to
 }
 
 message CreateUserResponse {
