@@ -59,3 +59,9 @@ class UserCommands:
         user.status = UserStatus.DELETED.value
         user.deleted_at = datetime.now(timezone.utc)
         await self.session.flush()
+
+    async def restore(self, user: User) -> None:
+        """Restore a soft-deleted user."""
+        user.status = UserStatus.ACTIVE.value
+        user.deleted_at = None
+        await self.session.flush()

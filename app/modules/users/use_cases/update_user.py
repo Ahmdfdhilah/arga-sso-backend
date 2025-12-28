@@ -44,7 +44,6 @@ class UpdateUserUseCase:
         if not user:
             raise NotFoundException(f"User {user_id} tidak ditemukan")
 
-        # Handle avatar upload
         if avatar_file and avatar_file.filename:
             try:
                 _, avatar_path = await upload_file_to_gcp(
@@ -54,7 +53,6 @@ class UpdateUserUseCase:
                     subfolder="avatar"
                 )
 
-                # Delete old avatar if exists
                 if user.avatar_path:
                     try:
                         storage_client = get_gcp_storage_client()
@@ -68,11 +66,7 @@ class UpdateUserUseCase:
             except Exception as e:
                 logger.error(f"Failed to upload avatar for user {user_id}: {e}")
 
-        # Update user fields
         updated_user = await self.commands.update(user, data)
         logger.info(f"User updated: {user_id}")
-
-        # Publish event
-        await UserEventUtil.publish(self.event_publisher, "updated", updated_user)
 
         return updated_user

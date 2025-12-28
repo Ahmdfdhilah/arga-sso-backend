@@ -36,7 +36,6 @@ class CreateUserUseCase:
         avatar_file: Optional[UploadFile] = None,
     ) -> User:
         """Execute the create user use case. Returns raw User model."""
-        # 1. Create user
         user = await self.commands.create(
             name=data.name,
             email=data.email,
@@ -48,7 +47,6 @@ class CreateUserUseCase:
         )
         logger.info(f"User created: {user.id}")
 
-        # 2. Handle avatar upload if provided
         if avatar_file and avatar_file.filename:
             try:
                 _, avatar_path = await upload_file_to_gcp(
@@ -61,8 +59,5 @@ class CreateUserUseCase:
                 logger.info(f"Avatar uploaded for user {user.id}: {avatar_path}")
             except Exception as e:
                 logger.error(f"Failed to upload avatar for user {user.id}: {e}")
-
-        # 3. Publish event
-        await UserEventUtil.publish(self.event_publisher, "created", user)
 
         return user

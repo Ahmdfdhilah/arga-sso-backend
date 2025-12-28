@@ -274,43 +274,97 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
                     error=str(e)
                 )
 
-    async def DeleteUser(
+    async def RemoveUserFromApps(
         self,
-        request: user_pb2.DeleteUserRequest,
+        request: user_pb2.RemoveUserFromAppsRequest,
         context: grpc.aio.ServicerContext,
-    ) -> user_pb2.DeleteUserResponse:
-        """Soft delete user."""
-        logger.info(f"gRPC DeleteUser called for user_id: {request.user_id}")
+    ) -> user_pb2.RemoveUserFromAppsResponse:
+        """Remove user from specific applications (app-specific delete)."""
+        logger.info(f"gRPC RemoveUserFromApps called for user_id: {request.user_id}, apps: {list(request.app_codes)}")
 
         async with await self._get_session() as session:
             try:
-                user_queries = UserQueries(session)
-                user_commands = UserCommands(session)
-
-                user = await user_queries.get_by_id(request.user_id)
-                if not user:
-                    return user_pb2.DeleteUserResponse(
-                        success=False,
-                        error=f"User {request.user_id} tidak ditemukan"
-                    )
-
-                await user_commands.delete(user)
+                from app.modules.applications.repositories import ApplicationQueries, ApplicationCommands
+                
+                app_queries = ApplicationQueries(session)
+                app_commands = ApplicationCommands(session)
+                
+                for app_code in request.app_codes:
+                    app = await app_queries.get_by_code(app_code)
+                    if app:
+                        await app_commands.remove_application_from_user(request.user_id, str(app.id))
+                        logger.info(f"Removed user {request.user_id} from app {app_code}")
+                
+                remaining_apps = await app_queries.get_user_applications(request.user_id)
+                remaining_count = len(remaining_apps)
+                
+                if remaining_count == 0:
+                    user_queries = UserQueries(session)
+                    user_commands = UserCommands(session)
+                    user = await user_queries.get_by_id(request.user_id)
+                    if user and user.deleted_at is None:
+                        await user_commands.delete(user)
+                        logger.info(f"User {request.user_id} soft-deleted (no apps remaining)")
+                
                 await session.commit()
+                logger.info(f"User {request.user_id} removed from apps, remaining: {remaining_count}")
 
-                logger.info(f"User deleted via gRPC: {request.user_id}")
-
-                return user_pb2.DeleteUserResponse(success=True)
-
-            except NotFoundException as e:
-                await session.rollback()
-                return user_pb2.DeleteUserResponse(
-                    success=False,
-                    error=str(e)
+                return user_pb2.RemoveUserFromAppsResponse(
+                    success=True,
+                    remaining_apps=remaining_count
                 )
+
             except Exception as e:
                 await session.rollback()
-                logger.error(f"Failed to delete user: {e}", exc_info=True)
-                return user_pb2.DeleteUserResponse(
+                logger.error(f"Failed to remove user from apps: {e}", exc_info=True)
+                return user_pb2.RemoveUserFromAppsResponse(
+                    success=False,
+                    error=str(e),
+                    remaining_apps=0
+                )
+
+    async def AssignUserToApps(
+        self,
+        request: user_pb2.AssignUserToAppsRequest,
+        context: grpc.aio.ServicerContext,
+    ) -> user_pb2.AssignUserToAppsResponse:
+        """Assign user to specific applications (for restore or new assignment)."""
+        logger.info(f"gRPC AssignUserToApps called for user_id: {request.user_id}, apps: {list(request.app_codes)}")
+
+        async with await self._get_session() as session:
+            try:
+                from app.modules.applications.repositories import ApplicationQueries, ApplicationCommands
+                
+                app_queries = ApplicationQueries(session)
+                app_commands = ApplicationCommands(session)
+                
+                app_ids = []
+                for app_code in request.app_codes:
+                    app = await app_queries.get_by_code(app_code)
+                    if app:
+                        app_ids.append(str(app.id))
+                    else:
+                        logger.warning(f"Application code '{app_code}' not found, skipping")
+                
+                if app_ids:
+                    await app_commands.assign_applications_to_user(request.user_id, app_ids)
+                    logger.info(f"Assigned user {request.user_id} to {len(app_ids)} applications")
+                    
+                    user_queries = UserQueries(session)
+                    user_commands = UserCommands(session)
+                    user = await user_queries.get_by_id_include_deleted(request.user_id)
+                    if user and user.deleted_at is not None:
+                        await user_commands.restore(user)
+                        logger.info(f"User {request.user_id} restored (apps assigned)")
+
+                await session.commit()
+
+                return user_pb2.AssignUserToAppsResponse(success=True)
+
+            except Exception as e:
+                await session.rollback()
+                logger.error(f"Failed to assign user to apps: {e}", exc_info=True)
+                return user_pb2.AssignUserToAppsResponse(
                     success=False,
                     error=str(e)
                 )

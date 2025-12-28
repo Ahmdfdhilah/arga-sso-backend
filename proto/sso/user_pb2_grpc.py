@@ -64,10 +64,15 @@ class UserServiceStub(object):
                 request_serializer=proto_dot_sso_dot_user__pb2.UpdateUserRequest.SerializeToString,
                 response_deserializer=proto_dot_sso_dot_user__pb2.UpdateUserResponse.FromString,
                 _registered_method=True)
-        self.DeleteUser = channel.unary_unary(
-                '/sso.UserService/DeleteUser',
-                request_serializer=proto_dot_sso_dot_user__pb2.DeleteUserRequest.SerializeToString,
-                response_deserializer=proto_dot_sso_dot_user__pb2.DeleteUserResponse.FromString,
+        self.RemoveUserFromApps = channel.unary_unary(
+                '/sso.UserService/RemoveUserFromApps',
+                request_serializer=proto_dot_sso_dot_user__pb2.RemoveUserFromAppsRequest.SerializeToString,
+                response_deserializer=proto_dot_sso_dot_user__pb2.RemoveUserFromAppsResponse.FromString,
+                _registered_method=True)
+        self.AssignUserToApps = channel.unary_unary(
+                '/sso.UserService/AssignUserToApps',
+                request_serializer=proto_dot_sso_dot_user__pb2.AssignUserToAppsRequest.SerializeToString,
+                response_deserializer=proto_dot_sso_dot_user__pb2.AssignUserToAppsResponse.FromString,
                 _registered_method=True)
 
 
@@ -112,7 +117,14 @@ class UserServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def DeleteUser(self, request, context):
+    def RemoveUserFromApps(self, request, context):
+        """App assignment operations (delete is now app-specific, not user-delete)
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def AssignUserToApps(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -151,10 +163,15 @@ def add_UserServiceServicer_to_server(servicer, server):
                     request_deserializer=proto_dot_sso_dot_user__pb2.UpdateUserRequest.FromString,
                     response_serializer=proto_dot_sso_dot_user__pb2.UpdateUserResponse.SerializeToString,
             ),
-            'DeleteUser': grpc.unary_unary_rpc_method_handler(
-                    servicer.DeleteUser,
-                    request_deserializer=proto_dot_sso_dot_user__pb2.DeleteUserRequest.FromString,
-                    response_serializer=proto_dot_sso_dot_user__pb2.DeleteUserResponse.SerializeToString,
+            'RemoveUserFromApps': grpc.unary_unary_rpc_method_handler(
+                    servicer.RemoveUserFromApps,
+                    request_deserializer=proto_dot_sso_dot_user__pb2.RemoveUserFromAppsRequest.FromString,
+                    response_serializer=proto_dot_sso_dot_user__pb2.RemoveUserFromAppsResponse.SerializeToString,
+            ),
+            'AssignUserToApps': grpc.unary_unary_rpc_method_handler(
+                    servicer.AssignUserToApps,
+                    request_deserializer=proto_dot_sso_dot_user__pb2.AssignUserToAppsRequest.FromString,
+                    response_serializer=proto_dot_sso_dot_user__pb2.AssignUserToAppsResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -330,7 +347,7 @@ class UserService(object):
             _registered_method=True)
 
     @staticmethod
-    def DeleteUser(request,
+    def RemoveUserFromApps(request,
             target,
             options=(),
             channel_credentials=None,
@@ -343,9 +360,36 @@ class UserService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/sso.UserService/DeleteUser',
-            proto_dot_sso_dot_user__pb2.DeleteUserRequest.SerializeToString,
-            proto_dot_sso_dot_user__pb2.DeleteUserResponse.FromString,
+            '/sso.UserService/RemoveUserFromApps',
+            proto_dot_sso_dot_user__pb2.RemoveUserFromAppsRequest.SerializeToString,
+            proto_dot_sso_dot_user__pb2.RemoveUserFromAppsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def AssignUserToApps(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/sso.UserService/AssignUserToApps',
+            proto_dot_sso_dot_user__pb2.AssignUserToAppsRequest.SerializeToString,
+            proto_dot_sso_dot_user__pb2.AssignUserToAppsResponse.FromString,
             options,
             channel_credentials,
             insecure,

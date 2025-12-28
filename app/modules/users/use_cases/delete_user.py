@@ -32,9 +32,6 @@ class DeleteUserUseCase:
         if not user:
             raise NotFoundException(f"User {user_id} tidak ditemukan")
 
-        # Publish event before delete (need user data)
-        await UserEventUtil.publish(self.event_publisher, "deleted", user)
-
-        # Delete user
+     
         await self.commands.delete(user)
         logger.info(f"User deleted: {user_id}")

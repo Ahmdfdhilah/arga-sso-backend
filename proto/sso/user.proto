@@ -16,7 +16,10 @@ service UserService {
   // Write operations (for HRIS integration)
   rpc CreateUser (CreateUserRequest) returns (CreateUserResponse);
   rpc UpdateUser (UpdateUserRequest) returns (UpdateUserResponse);
-  rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse);
+  
+  // App assignment operations (delete is now app-specific, not user-delete)
+  rpc RemoveUserFromApps (RemoveUserFromAppsRequest) returns (RemoveUserFromAppsResponse);
+  rpc AssignUserToApps (AssignUserToAppsRequest) returns (AssignUserToAppsResponse);
 }
 
 message User {
@@ -90,12 +93,26 @@ message UpdateUserResponse {
   optional User user = 3;
 }
 
-// Soft delete user
-message DeleteUserRequest {
+// Remove user from specific apps (app-specific delete)
+message RemoveUserFromAppsRequest {
   string user_id = 1;
+  repeated string app_codes = 2;
 }
 
-message DeleteUserResponse {
+message RemoveUserFromAppsResponse {
+  bool success = 1;
+  optional string error = 2;
+  int32 remaining_apps = 3;  // How many apps user still has access to
+}
+
+// Assign user to apps (for restore or new assignment)
+message AssignUserToAppsRequest {
+  string user_id = 1;
+  repeated string app_codes = 2;
+}
+
+message AssignUserToAppsResponse {
   bool success = 1;
   optional string error = 2;
 }
+
