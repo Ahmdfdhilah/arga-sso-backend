@@ -13,7 +13,7 @@ from app.modules.auth.repositories import AuthProviderCommands
 from app.modules.users.models import User
 from app.core.enums import UserRole, UserStatus, AuthProvider
 from app.core.security import PasswordService
-from app.grpc.utils import datetime_to_timestamp, generate_temp_password
+from app.grpc.utils import datetime_to_timestamp, generate_temp_password, get_grpc_error_message
 from app.grpc.converters import user_to_proto
 from app.core.exceptions import BadRequestException, NotFoundException
 
@@ -201,11 +201,9 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
                 )
             except Exception as e:
                 await session.rollback()
-                logger.error(f"Failed to create user: {e}", exc_info=True)
-                return user_pb2.CreateUserResponse(
-                    success=False,
-                    error=str(e)
-                )
+                error_msg = get_grpc_error_message(e, "Terjadi kesalahan saat membuat user")
+                logger.warning(f"CreateUser failed: {error_msg}")
+                return user_pb2.CreateUserResponse(success=False, error=error_msg)
 
     async def UpdateUser(
         self,
@@ -268,11 +266,9 @@ class UserHandler(user_pb2_grpc.UserServiceServicer):
                 )
             except Exception as e:
                 await session.rollback()
-                logger.error(f"Failed to update user: {e}", exc_info=True)
-                return user_pb2.UpdateUserResponse(
-                    success=False,
-                    error=str(e)
-                )
+                error_msg = get_grpc_error_message(e, "Terjadi kesalahan saat memperbarui user")
+                logger.warning(f"UpdateUser failed: {error_msg}")
+                return user_pb2.UpdateUserResponse(success=False, error=error_msg)
 
     async def RemoveUserFromApps(
         self,

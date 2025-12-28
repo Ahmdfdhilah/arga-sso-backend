@@ -60,3 +60,52 @@ def generate_temp_password(length: int = 12) -> str:
     """Generate a secure temporary password."""
     alphabet = string.ascii_letters + string.digits
     return ''.join(secrets.choice(alphabet) for _ in range(length))
+
+
+def get_grpc_error_message(error: Exception, fallback_message: str) -> str:
+    """
+    Parse database exceptions and return user-friendly Indonesian message.
+    
+    Used in gRPC handlers to catch IntegrityError and other DB errors,
+    then return a clean message instead of raw SQL error.
+    
+    Args:
+        error: Exception from database operation
+        fallback_message: Default message if error can't be parsed
+        
+    Returns:
+        User-friendly error message in Indonesian
+    """
+    error_str = str(error)
+    
+    # Unique constraint violations
+    if "UniqueViolationError" in error_str or "unique constraint" in error_str.lower():
+        if "users_email_key" in error_str or ("email" in error_str.lower() and "foreign" not in error_str.lower()):
+            return "Email sudah terdaftar"
+        elif "users_phone_key" in error_str or "phone" in error_str.lower():
+            return "Nomor telepon sudah terdaftar"
+        elif "users_username_key" in error_str or "username" in error_str.lower():
+            return "Username sudah digunakan"
+        else:
+            return "Data sudah ada dalam sistem"
+    
+    # Foreign key violations
+    if "ForeignKeyViolationError" in error_str or "foreign key" in error_str.lower():
+        if "user_id" in error_str.lower():
+            return "User tidak ditemukan"
+        elif "role" in error_str.lower():
+            return "Role tidak ditemukan"
+        elif "application" in error_str.lower() or "app" in error_str.lower():
+            return "Aplikasi tidak ditemukan"
+        return "Data terkait tidak ditemukan"
+    
+    # Not null violations
+    if "NotNullViolationError" in error_str or "not-null" in error_str.lower():
+        return "Data wajib tidak boleh kosong"
+    
+    # Check constraint violations  
+    if "CheckViolationError" in error_str or "check constraint" in error_str.lower():
+        return "Data tidak valid"
+    
+    return fallback_message
+
