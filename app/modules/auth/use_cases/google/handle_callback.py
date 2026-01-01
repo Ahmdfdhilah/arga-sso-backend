@@ -112,7 +112,7 @@ class GoogleOAuthHandleCallbackUseCase:
             try:
                 avatar_path = await download_and_upload_avatar_from_url(
                     avatar_url=google_user.picture,
-                    user_id=str(user.id),
+                    user_id=user.id,
                     old_avatar_path=user.avatar_path,
                 )
                 if avatar_path:
@@ -125,6 +125,7 @@ class GoogleOAuthHandleCallbackUseCase:
         app = await self.client_validator.validate_client_access(
             user_id=str(user.id), client_id=client_id
         )
+
         single_session = app.single_session if app else False
 
         logger.info(f"Google login: {user.id} -> {client_id or 'SSO'}")

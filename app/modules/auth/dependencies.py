@@ -124,6 +124,8 @@ def get_oauth_google_service(
     )
 
 
+
+
 AuthQueriesDep = Annotated[AuthProviderQueries, Depends(get_auth_queries)]
 AuthCommandsDep = Annotated[AuthProviderCommands, Depends(get_auth_commands)]
 UserQueriesDep = Annotated[UserQueries, Depends(get_user_queries)]

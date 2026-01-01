@@ -41,7 +41,6 @@ def upgrade() -> None:
             sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True),
             sa.PrimaryKeyConstraint('id'),
             sa.UniqueConstraint('email'),
-            sa.UniqueConstraint('phone'),
             sa.CheckConstraint("gender IN ('male', 'female') OR gender IS NULL", name='ck_users_gender')
         )
     
