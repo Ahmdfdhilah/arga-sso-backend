@@ -2,7 +2,7 @@ import json
 import uuid
 import hashlib
 from typing import Optional, Dict, Any, List
-# from app.core.exceptions import BadRequestException
+from app.core.exceptions import BadRequestException
 
 import redis.asyncio as redis
 
@@ -62,9 +62,8 @@ class SessionService:
         Returns:
             device_id: UUID of the created session
         """
-        
-        # if not device_id:
-        #     raise BadRequestException("Device ID dibutuhkan.")
+        if not device_id:
+            device_id = str(uuid.uuid4())
 
         existing_sessions = await self.get_client_sessions(user_id, client_id)
         
