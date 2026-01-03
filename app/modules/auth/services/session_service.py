@@ -78,12 +78,12 @@ class SessionService:
             elif is_same_device:
                 await self.delete_client_device_session(user_id, client_id, device_id)
 
-        # if not single_session and len(existing_sessions) >= settings.MAX_ACTIVE_SESSIONS:
-        #     if not is_same_device:
-        #         from app.core.exceptions import BadRequestException
-        #         raise BadRequestException(f"Batas maksimum sesi tercapai ({settings.MAX_ACTIVE_SESSIONS}). Silakan logout dari perangkat lain.")
-        #     else:
-        #         await self.delete_client_device_session(user_id, client_id, device_id)
+        if not single_session and len(existing_sessions) >= settings.MAX_ACTIVE_SESSIONS:
+            if not is_same_device:
+                from app.core.exceptions import BadRequestException
+                raise BadRequestException(f"Batas maksimum sesi tercapai ({settings.MAX_ACTIVE_SESSIONS}). Silakan logout dari perangkat lain.")
+            else:
+                await self.delete_client_device_session(user_id, client_id, device_id)
 
         session_data = {
             "user_id": user_id,
